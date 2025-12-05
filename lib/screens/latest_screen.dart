@@ -115,9 +115,17 @@ class _LatestScreenState extends State<LatestScreen>
               return AppListItem(
                 app: app,
                 onTap: () {
+                  final screenshots = context
+                      .read<AppProvider>()
+                      .getScreenshots(app.packageName);
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => AppDetailsScreen(app: app),
+                      builder: (context) => AppDetailsScreen(
+                        app: app,
+                        screenshots: screenshots.isNotEmpty
+                            ? screenshots
+                            : null,
+                      ),
                     ),
                   );
                 },

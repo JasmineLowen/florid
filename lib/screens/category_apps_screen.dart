@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/app_provider.dart';
 import '../widgets/app_list_item.dart';
 import 'app_details_screen.dart';
@@ -133,9 +134,17 @@ class _CategoryAppsScreenState extends State<CategoryAppsScreen> {
                         showCategory:
                             false, // Don't show category since we're already in a category
                         onTap: () {
+                          final screenshots = context
+                              .read<AppProvider>()
+                              .getScreenshots(app.packageName);
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => AppDetailsScreen(app: app),
+                              builder: (context) => AppDetailsScreen(
+                                app: app,
+                                screenshots: screenshots.isNotEmpty
+                                    ? screenshots
+                                    : null,
+                              ),
                             ),
                           );
                         },

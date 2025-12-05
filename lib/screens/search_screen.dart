@@ -52,24 +52,13 @@ class _SearchScreenState extends State<SearchScreen> {
           decoration: InputDecoration(
             hintText: 'Search F-Droid apps...',
             border: InputBorder.none,
-            suffixIcon: Consumer<AppProvider>(
-              builder: (context, appProvider, child) {
-                if (appProvider.searchQuery.isNotEmpty) {
-                  return IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: _clearSearch,
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
           ),
           textInputAction: TextInputAction.search,
           onSubmitted: _performSearch,
           onChanged: (query) {
             // Debounced search - search after user stops typing for 500ms
             if (query.trim().isNotEmpty) {
-              Future.delayed(const Duration(milliseconds: 500), () {
+              Future.delayed(const Duration(milliseconds: 100), () {
                 if (_searchController.text.trim() == query.trim()) {
                   _performSearch(query.trim());
                 }
@@ -80,6 +69,17 @@ class _SearchScreenState extends State<SearchScreen> {
           },
         ),
         actions: [
+          Consumer<AppProvider>(
+            builder: (context, appProvider, child) {
+              if (appProvider.searchQuery.isNotEmpty) {
+                return IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: _clearSearch,
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
@@ -98,34 +98,36 @@ class _SearchScreenState extends State<SearchScreen> {
           // Show initial state
           if (query.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Search F-Droid Apps',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Find free and open-source Android apps',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.search,
+                      size: 64,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  _SearchSuggestions(
-                    onSuggestionTap: (suggestion) {
-                      _searchController.text = suggestion;
-                      _performSearch(suggestion);
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Text(
+                      'Search F-Droid Apps',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Find free and open-source Android apps',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    _SearchSuggestions(
+                      onSuggestionTap: (suggestion) {
+                        _searchController.text = suggestion;
+                        _performSearch(suggestion);
+                      },
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -238,9 +240,17 @@ class _SearchScreenState extends State<SearchScreen> {
                     return AppListItem(
                       app: app,
                       onTap: () {
+                        final screenshots = context
+                            .read<AppProvider>()
+                            .getScreenshots(app.packageName);
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => AppDetailsScreen(app: app),
+                            builder: (context) => AppDetailsScreen(
+                              app: app,
+                              screenshots: screenshots.isNotEmpty
+                                  ? screenshots
+                                  : null,
+                            ),
                           ),
                         );
                       },
@@ -279,7 +289,7 @@ class _SearchSuggestions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -291,20 +301,24 @@ class _SearchSuggestions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          alignment: WrapAlignment.center,
-          children: _suggestions.map((suggestion) {
-            return ActionChip(
-              label: Text(suggestion),
-              onPressed: () => onSuggestionTap(suggestion),
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest,
-              side: BorderSide.none,
-            );
-          }).toList(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+
+            alignment: WrapAlignment.center,
+            children: _suggestions.map((suggestion) {
+              return ActionChip(
+                label: Text(suggestion),
+                onPressed: () => onSuggestionTap(suggestion),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
+                side: BorderSide.none,
+              );
+            }).toList(),
+          ),
         ),
       ],
     );

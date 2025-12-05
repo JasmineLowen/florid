@@ -10,8 +10,9 @@ import 'permissions_screen.dart';
 
 class AppDetailsScreen extends StatelessWidget {
   final FDroidApp app;
+  final List<String>? screenshots;
 
-  const AppDetailsScreen({super.key, required this.app});
+  const AppDetailsScreen({super.key, required this.app, this.screenshots});
 
   @override
   Widget build(BuildContext context) {
@@ -157,37 +158,47 @@ class AppDetailsScreen extends StatelessWidget {
                       spacing: 16,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Hero(
-                          tag: 'app-icon-${app.packageName}',
-                          child: Material(
-                            child: SizedBox(
-                              width: 100,
-                              height: 100,
+                        Row(
+                          spacing: 8,
+                          children: [
+                            Hero(
+                              tag: 'app-icon-${app.packageName}',
+                              child: Material(
+                                child: SizedBox(
+                                  width: 100,
+                                  height: 100,
 
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: _AppDetailsIcon(app: app),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: _AppDetailsIcon(app: app),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 4,
-                          children: [
-                            Text(
-                              app.name,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            Text(
-                              'by ${app.authorName ?? 'Unknown'}',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: 4,
+                                children: [
+                                  Text(
+                                    app.name,
+                                    style: Theme.of(
                                       context,
-                                    ).colorScheme.onSurfaceVariant,
+                                    ).textTheme.titleLarge,
                                   ),
+                                  Text(
+                                    'by ${app.authorName ?? 'Unknown'}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -199,6 +210,11 @@ class AppDetailsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  // Screenshots section
+                  if (screenshots?.isNotEmpty == true)
+                    _ScreenshotsSection(screenshots: screenshots!)
+                  else
+                    const SizedBox.shrink(),
 
                   // Description
                   _DescriptionSection(app: app),
@@ -216,13 +232,14 @@ class AppDetailsScreen extends StatelessWidget {
                     _VersionInfoSection(version: app.latestVersion!)
                   else
                     const _NoVersionInfoSection(),
-                  Divider(),
+                  if (app.latestVersion != null) Divider(),
                   // All versions history
                   if (app.packages != null && app.packages!.isNotEmpty)
                     _AllVersionsSection(app: app)
                   else
                     const SizedBox.shrink(),
-                  Divider(),
+                  if (app.packages != null && app.packages!.isNotEmpty)
+                    Divider(),
                   // Permissions section
                   if (app.latestVersion?.permissions?.isNotEmpty == true)
                     ListTile(
@@ -250,6 +267,9 @@ class AppDetailsScreen extends StatelessWidget {
                     )
                   else
                     const SizedBox.shrink(),
+
+                  if (app.latestVersion?.permissions?.isNotEmpty == true)
+                    Divider(),
 
                   const SizedBox(height: 24),
                 ],
@@ -903,6 +923,7 @@ class _AllVersionsSection extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+
       children: [
         Text(
           'All Versions',
@@ -910,101 +931,297 @@ class _AllVersionsSection extends StatelessWidget {
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: versions.length,
-          itemBuilder: (context, index) {
-            final version = versions[index];
-            final isLatest = index == 0;
+        const SizedBox(height: 12),
+        ...versions.map((version) {
+          final isLatest = version == versions.first;
 
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isLatest
-                    ? Theme.of(context).colorScheme.primaryContainer
-                    : Theme.of(context).colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
-                border: isLatest
-                    ? Border.all(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1,
-                      )
-                    : null,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              version.versionName,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            Text(
-                              'Code: ${version.versionCode}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (isLatest)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+          return Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 4),
+            decoration: BoxDecoration(
+              color: isLatest
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(16),
+              border: isLatest
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1,
+                    )
+                  : null,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            version.versionName,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'Latest',
-                            style: Theme.of(context).textTheme.labelSmall
+                          Text(
+                            'Code: ${version.versionCode}',
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.onPrimary,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                           ),
+                        ],
+                      ),
+                    ),
+                    if (isLatest)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(
-                        'Size: ${version.sizeString}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Latest',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                        ),
                       ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Released: ${_formatDate(version.added)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      'Size: ${version.sizeString}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      'Released: ${_formatDate(version.added)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class _ScreenshotsSection extends StatelessWidget {
+  final List<String> screenshots;
+
+  const _ScreenshotsSection({required this.screenshots});
+
+  String _getScreenshotUrl(String screenshot) {
+    var path = screenshot.trim();
+    while (path.startsWith('/')) {
+      path = path.substring(1);
+    }
+    return 'https://f-droid.org/repo/$path';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Screenshots',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 300,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: screenshots.length,
+            itemBuilder: (context, index) {
+              final screenshot = screenshots[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index != screenshots.length - 1 ? 12 : 0,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Material(
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => _FullScreenScreenshots(
+                              screenshots: screenshots,
+                              initialIndex: index,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Image.network(
+                        _getScreenshotUrl(screenshot),
+                        fit: BoxFit.cover,
+                        cacheWidth: 300,
+                        cacheHeight: 600,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainer,
+                            child: const Center(
+                              child: Icon(Icons.broken_image),
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainer,
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FullScreenScreenshots extends StatefulWidget {
+  final List<String> screenshots;
+  final int initialIndex;
+
+  const _FullScreenScreenshots({
+    required this.screenshots,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_FullScreenScreenshots> createState() => _FullScreenScreenshotsState();
+}
+
+class _FullScreenScreenshotsState extends State<_FullScreenScreenshots> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  String _getScreenshotUrl(String screenshot) {
+    var path = screenshot.trim();
+    while (path.startsWith('/')) {
+      path = path.substring(1);
+    }
+    return 'https://f-droid.org/repo/$path';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black87,
+        elevation: 0,
+        title: Text(
+          '${_currentIndex + 1} / ${widget.screenshots.length}',
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        itemCount: widget.screenshots.length,
+        itemBuilder: (context, index) {
+          final screenshot = widget.screenshots[index];
+          return SafeArea(
+            child: Container(
+              color: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  _getScreenshotUrl(screenshot),
+                  fit: BoxFit.cover,
+                  cacheWidth: 1080,
+                  cacheHeight: 2160,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[900],
+                      child: const Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                            : null,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

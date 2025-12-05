@@ -222,4 +222,9 @@ class AppProvider extends ChangeNotifier {
       fetchInstalledApps(),
     ]);
   }
+
+  /// Gets screenshots for an app package
+  List<String> getScreenshots(String packageName) {
+    return _apiService.getScreenshots(packageName);
+  }
 }

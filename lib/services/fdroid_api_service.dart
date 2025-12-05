@@ -18,6 +18,9 @@ class FDroidApiService {
   final Dio _dio;
   final Map<String, CancelToken> _downloadTokens = {};
 
+  /// Cache raw repository JSON for screenshot extraction
+  Map<String, dynamic>? _cachedRawJson;
+
   FDroidApiService({http.Client? client, Dio? dio})
     : _client = client ?? http.Client(),
       _dio = dio ?? Dio();
@@ -64,6 +67,7 @@ class FDroidApiService {
     // Prefer cache when available.
     if (cachedJson != null) {
       try {
+        _cachedRawJson = cachedJson;
         return FDroidRepository.fromJson(cachedJson);
       } catch (_) {
         // If cache is corrupt, fall through to network fetch.
@@ -78,15 +82,14 @@ class FDroidApiService {
         final body = response.body;
         await _saveCache(body);
         final jsonData = json.decode(body);
+        // Cache the raw JSON for screenshot extraction
+        _cachedRawJson = jsonData as Map<String, dynamic>;
         // Defensive: ensure expected top-level keys exist, else wrap in structure
-        if (jsonData is Map &&
-            (!jsonData.containsKey('repo') ||
-                !jsonData.containsKey('packages'))) {
+        if ((!jsonData.containsKey('repo') ||
+            !jsonData.containsKey('packages'))) {
           // Possibly already flattened custom structure; we still attempt parsing
         }
-        final repo = FDroidRepository.fromJson(
-          jsonData as Map<String, dynamic>,
-        );
+        final repo = FDroidRepository.fromJson(jsonData);
         return repo;
       } else {
         throw Exception('Failed to load repository: ${response.statusCode}');
@@ -94,6 +97,7 @@ class FDroidApiService {
     } catch (e) {
       // Fall back to cache if available.
       if (cachedJson != null) {
+        _cachedRawJson = cachedJson;
         return FDroidRepository.fromJson(cachedJson);
       }
       throw Exception('Error fetching repository: $e');
@@ -283,6 +287,120 @@ class FDroidApiService {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Extracts screenshots for a specific app package from cached raw JSON
+  List<String> getScreenshots(String packageName) {
+    if (_cachedRawJson == null) {
+      return [];
+    }
+
+    try {
+      final packages = (_cachedRawJson!['packages'] as Map?)
+          ?.cast<String, dynamic>();
+      if (packages == null) {
+        return [];
+      }
+
+      final pkgData = packages[packageName] as Map?;
+      if (pkgData == null) {
+        return [];
+      }
+
+      // Try multiple locations for screenshots
+      List<String>? screenshotsList;
+
+      // 1. Direct metadata.screenshots
+      final metadata = (pkgData['metadata'] as Map?)?.cast<String, dynamic>();
+      if (metadata != null) {
+        screenshotsList = _extractScreenshots(metadata['screenshots']);
+        if (screenshotsList.isNotEmpty) {
+          return screenshotsList;
+        }
+      }
+
+      // 2. Check if screenshots might be in a localized format
+      if (metadata != null) {
+        for (final key in metadata.keys) {
+          if (key.toString().contains('screenshot')) {
+            screenshotsList = _extractScreenshots(metadata[key]);
+            if (screenshotsList.isNotEmpty) return screenshotsList;
+          }
+        }
+      }
+
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  List<String> _extractScreenshots(dynamic screenshotData) {
+    if (screenshotData == null) {
+      return [];
+    }
+
+    final screenshots = <String>[];
+
+    if (screenshotData is List) {
+      for (final item in screenshotData) {
+        if (item is String) {
+          screenshots.add(item);
+        } else if (item is Map) {
+          // Try different keys
+          if (item['name'] is String) {
+            screenshots.add(item['name'] as String);
+          } else if (item['path'] is String) {
+            screenshots.add(item['path'] as String);
+          } else if (item['url'] is String) {
+            screenshots.add(item['url'] as String);
+          }
+        }
+      }
+    } else if (screenshotData is Map) {
+      // Check for device-type categories (phone, sevenInch, tenInch)
+      for (final deviceType in ['phone', 'sevenInch', 'tenInch']) {
+        final deviceData = screenshotData[deviceType];
+        if (deviceData != null) {
+          // Device data could be localized: {en-US: [...], de: [...]}
+          if (deviceData is Map) {
+            // Look for localized screenshot lists
+            for (final localeScreenshots in deviceData.values) {
+              if (localeScreenshots is List) {
+                for (final item in localeScreenshots) {
+                  if (item is String) {
+                    screenshots.add(item);
+                  } else if (item is Map && item['name'] is String) {
+                    screenshots.add(item['name'] as String);
+                  }
+                }
+              }
+            }
+          } else if (deviceData is List) {
+            for (final item in deviceData) {
+              if (item is String) {
+                screenshots.add(item);
+              } else if (item is Map && item['name'] is String) {
+                screenshots.add(item['name'] as String);
+              }
+            }
+          }
+        }
+      }
+
+      // If no device-type structure found, try localized format
+      if (screenshots.isEmpty) {
+        for (final value in screenshotData.values) {
+          if (value is List) {
+            screenshots.addAll(_extractScreenshots(value));
+          } else if (value is String) {
+            screenshots.add(value);
+          }
+        }
+      }
+    }
+
+    return screenshots;
   }
 
   void dispose() {
