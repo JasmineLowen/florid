@@ -213,7 +213,6 @@ class AppListItem extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       dense: true,
-      trailing: _DownloadButton(app: app),
     );
   }
 }
