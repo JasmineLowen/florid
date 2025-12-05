@@ -150,45 +150,32 @@ class AppDetailsScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
+                    spacing: 16,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        spacing: 16,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Hero(
-                            tag: 'app-icon-${app.packageName}',
-                            child: Material(
-                              child: SizedBox(
-                                width: 100,
-                                height: 100,
+                      Hero(
+                        tag: 'app-icon-${app.packageName}',
+                        child: Material(
+                          child: SizedBox(
+                            width: 100,
+                            height: 100,
 
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: _AppDetailsIcon(app: app),
-                                ),
-                              ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: _AppDetailsIcon(app: app),
                             ),
                           ),
+                        ),
+                      ),
 
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
                           Text(
                             app.name,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          if (app.categories?.isNotEmpty == true) ...[
-                            Chip(
-                              label: Text(app.categories!.first),
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primaryContainer,
-                            ),
-                            const SizedBox(width: 8),
-                          ],
                           Text(
                             'by ${app.authorName ?? 'Unknown'}',
                             style: Theme.of(context).textTheme.bodyMedium
@@ -200,18 +187,23 @@ class AppDetailsScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (app.categories?.isNotEmpty == true) ...[
+                        Chip(label: Text(app.categories!.first)),
+                      ],
+
+                      _DownloadSection(app: app),
                     ],
                   ),
                 ),
 
+                // Description
+                _DescriptionSection(app: app),
+
                 // Download section
-                _DownloadSection(app: app),
+                // _DownloadSection(app: app),
 
                 // App details
                 _AppInfoSection(app: app),
-
-                // Description
-                _DescriptionSection(app: app),
 
                 // Version info
                 if (app.latestVersion != null)
@@ -281,74 +273,75 @@ class _DownloadSection extends StatelessWidget {
         final version = app.latestVersion!;
         final isInstalled = appProvider.isAppInstalled(app.packageName);
         final installedApp = appProvider.getInstalledApp(app.packageName);
-        final isDownloading = downloadProvider.isDownloading(
+        final downloadInfo = downloadProvider.getDownloadInfo(
           app.packageName,
           version.versionName,
         );
-        final isDownloaded = downloadProvider.isDownloaded(
-          app.packageName,
-          version.versionName,
-        );
+        final isDownloading =
+            downloadInfo?.status == DownloadStatus.downloading;
+        final isCancelled = downloadInfo?.status == DownloadStatus.cancelled;
+        final isDownloaded =
+            downloadInfo?.status == DownloadStatus.completed &&
+            downloadInfo?.filePath != null &&
+            !isCancelled;
         final progress = downloadProvider.getProgress(
           app.packageName,
           version.versionName,
         );
 
         return Container(
-          width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          // width: double.infinity,
+          // margin: const EdgeInsets.symmetric(horizontal: 16),
+          // decoration: BoxDecoration(
+          //   color: Theme.of(context).colorScheme.primaryContainer,
+          //   borderRadius: BorderRadius.circular(16),
+          // ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Version ${version.versionName}',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Size: ${version.sizeString}',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
-                              ),
-                        ),
-                        if (isInstalled && installedApp != null)
-                          Text(
-                            'Installed: ${installedApp.versionName ?? 'Unknown'}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer
-                                      .withOpacity(0.8),
-                                ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
+              // Row(
+              //   children: [
+              //     Expanded(
+              //       child: Column(
+              //         crossAxisAlignment: CrossAxisAlignment.start,
+              //         children: [
+              //           Text(
+              //             'Version ${version.versionName}',
+              //             style: Theme.of(context).textTheme.titleMedium
+              //                 ?.copyWith(
+              //                   color: Theme.of(
+              //                     context,
+              //                   ).colorScheme.onPrimaryContainer,
+              //                   fontWeight: FontWeight.w600,
+              //                 ),
+              //           ),
+              //           const SizedBox(height: 4),
+              //           Text(
+              //             'Size: ${version.sizeString}',
+              //             style: Theme.of(context).textTheme.bodyMedium
+              //                 ?.copyWith(
+              //                   color: Theme.of(
+              //                     context,
+              //                   ).colorScheme.onPrimaryContainer,
+              //                 ),
+              //           ),
+              //           if (isInstalled && installedApp != null)
+              //             Text(
+              //               'Installed: ${installedApp.versionName ?? 'Unknown'}',
+              //               style: Theme.of(context).textTheme.bodySmall
+              //                   ?.copyWith(
+              //                     color: Theme.of(context)
+              //                         .colorScheme
+              //                         .onPrimaryContainer
+              //                         .withOpacity(0.8),
+              //                   ),
+              //             ),
+              //         ],
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              // const SizedBox(height: 16),
               if (isDownloading)
                 Column(
                   children: [
@@ -362,11 +355,36 @@ class _DownloadSection extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'Downloading... ${(progress * 100).toInt()}%',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Downloading... ${(progress * 100).toInt()}%',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                                ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            downloadProvider.cancelDownload(
+                              app.packageName,
+                              version.versionName,
+                            );
+                          },
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 )
@@ -424,27 +442,51 @@ class _DownloadSection extends StatelessWidget {
                           }
                         }
                       } else {
-                        // Download APK
+                        // Download APK - show permission rationale first
+                        final shouldProceed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            icon: const Icon(Icons.folder_open, size: 48),
+                            title: const Text('Storage Permission Required'),
+                            content: const Text(
+                              'Florid needs access to your device storage to download and save APK files. This allows you to:\n\n'
+                              '• Download apps from F-Droid\n'
+                              '• Install downloaded apps\n'
+                              '• Manage your downloads\n\n'
+                              'Your files and data remain private and secure.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(false),
+                                child: const Text('Cancel'),
+                              ),
+                              FilledButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(true),
+                                child: const Text('Continue'),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (shouldProceed != true) return;
+
                         try {
                           await downloadProvider.downloadApk(app);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${app.name} downloaded successfully!',
-                                ),
-                              ),
-                            );
-                          }
+                          // No success message - auto-install handles feedback
                         } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Download failed: ${e.toString()}',
+                          // Only show error if not cancelled
+                          final errorMsg = e.toString();
+                          if (!errorMsg.contains('cancelled') &&
+                              !errorMsg.contains('Cancelled')) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Download failed: $errorMsg'),
                                 ),
-                              ),
-                            );
+                              );
+                            }
                           }
                         }
                       }

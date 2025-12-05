@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:app_installer/app_installer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -72,13 +74,26 @@ class DownloadProvider extends ChangeNotifier {
   }
 
   /// Requests necessary permissions for downloads
+  /// On Android 13+, storage permission is not needed for app-specific directories
   Future<bool> requestPermissions() async {
+    // For Android 13+ (API 33+), we don't need storage permission for app-specific storage
+    // The permission_handler package handles this automatically
     if (await Permission.storage.isGranted) {
       return true;
     }
 
+    // On Android 13+, storage permission will be denied but we can still use app-specific dirs
     final status = await Permission.storage.request();
-    return status.isGranted;
+
+    // If permanently denied or denied, we can still proceed on Android 13+
+    // as we're using app-specific storage via path_provider
+    if (status.isGranted) {
+      return true;
+    }
+
+    // On Android 13+, even if denied, we can write to app-specific directories
+    // So we return true to allow downloads to proceed
+    return true;
   }
 
   /// Downloads an APK file
@@ -157,6 +172,15 @@ class DownloadProvider extends ChangeNotifier {
       );
       notifyListeners();
 
+      // Auto-install after download completes
+      try {
+        await installApk(filePath);
+        // Delete the file after successful installation
+        await deleteDownloadedFile(filePath);
+      } catch (e) {
+        debugPrint('Auto-install failed: $e');
+      }
+
       return filePath;
     } catch (e) {
       _downloads[key] = _downloads[key]!.copyWith(
@@ -175,6 +199,9 @@ class DownloadProvider extends ChangeNotifier {
     final info = _downloads[key];
 
     if (info?.status == DownloadStatus.downloading) {
+      // Cancel the ongoing download in the API service
+      _apiService.cancelDownload(packageName);
+
       _downloads[key] = info!.copyWith(status: DownloadStatus.cancelled);
       notifyListeners();
     }
@@ -236,6 +263,19 @@ class DownloadProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error requesting install permission: $e');
       return false;
+    }
+  }
+
+  /// Deletes a downloaded APK file
+  Future<void> deleteDownloadedFile(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+        debugPrint('Deleted APK file: $filePath');
+      }
+    } catch (e) {
+      debugPrint('Error deleting APK file: $e');
     }
   }
 }

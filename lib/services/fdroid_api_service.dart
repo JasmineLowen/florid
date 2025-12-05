@@ -16,6 +16,7 @@ class FDroidApiService {
 
   final http.Client _client;
   final Dio _dio;
+  final Map<String, CancelToken> _downloadTokens = {};
 
   FDroidApiService({http.Client? client, Dio? dio})
     : _client = client ?? http.Client(),
@@ -195,11 +196,12 @@ class FDroidApiService {
     }
   }
 
-  /// Downloads an APK file with progress tracking
+  /// Downloads an APK file with progress tracking and cancellation support
   Future<String> downloadApk(
     FDroidVersion version,
     String packageName, {
     Function(double)? onProgress,
+    CancelToken? cancelToken,
   }) async {
     try {
       final directory = await getExternalStorageDirectory();
@@ -215,6 +217,9 @@ class FDroidApiService {
       final fileName = '${packageName}_${version.versionName}.apk';
       final filePath = '${downloadsDir.path}/$fileName';
 
+      final token = cancelToken ?? CancelToken();
+      _downloadTokens[packageName] = token;
+
       await _dio.download(
         version.downloadUrl,
         filePath,
@@ -223,11 +228,22 @@ class FDroidApiService {
             onProgress(received / total);
           }
         },
+        cancelToken: token,
       );
 
+      _downloadTokens.remove(packageName);
       return filePath;
     } catch (e) {
+      _downloadTokens.remove(packageName);
       throw Exception('Error downloading APK: $e');
+    }
+  }
+
+  /// Cancels an ongoing download
+  void cancelDownload(String packageName) {
+    final token = _downloadTokens[packageName];
+    if (token != null && !token.isCancelled) {
+      token.cancel('Download cancelled by user');
     }
   }
 
