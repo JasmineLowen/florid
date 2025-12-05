@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/app_provider.dart';
 import 'categories_screen.dart';
 import 'latest_screen.dart';
 import 'search_screen.dart';
+import 'settings_screen.dart';
 import 'updates_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -115,20 +118,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _refreshData() {
-    // TODO: Implement refresh functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Refreshing data...'),
-        duration: Duration(seconds: 1),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Refreshing data...')));
+    Future.microtask(() async {
+      try {
+        final appProvider = context.read<AppProvider>();
+        await appProvider.refreshAll();
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Data refreshed')));
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Refresh failed: $e')));
+      }
+    });
   }
 
   void _showSettings() {
-    // TODO: Implement settings screen
-    ScaffoldMessenger.of(
+    Navigator.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Settings coming soon!')));
+    ).push(MaterialPageRoute(builder: (context) => const SettingsScreen()));
   }
 
   void _showAbout() {

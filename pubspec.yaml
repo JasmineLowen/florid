@@ -49,6 +49,9 @@ dependencies:
   
   # Path provider for file storage
   path_provider: ^2.1.2
+
+  # Local key-value storage for settings
+  shared_preferences: ^2.3.2
   
   # Permission handler for Android permissions
   permission_handler: ^11.3.0
@@ -58,6 +61,9 @@ dependencies:
   
   # Cached network image for app icons
   cached_network_image: ^3.3.1
+
+  # Cache manager used by cached_network_image
+  flutter_cache_manager: ^3.3.2
   
   # File picker and downloads
   dio: ^5.4.1

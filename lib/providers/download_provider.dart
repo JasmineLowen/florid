@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/fdroid_app.dart';
+import '../providers/settings_provider.dart';
 import '../services/fdroid_api_service.dart';
 
 enum DownloadStatus { idle, downloading, completed, error, cancelled }
@@ -47,9 +48,15 @@ class DownloadInfo {
 
 class DownloadProvider extends ChangeNotifier {
   final FDroidApiService _apiService;
+  SettingsProvider _settingsProvider;
   final Map<String, DownloadInfo> _downloads = {};
 
-  DownloadProvider(this._apiService);
+  DownloadProvider(this._apiService, this._settingsProvider);
+
+  void updateSettings(SettingsProvider settings) {
+    _settingsProvider = settings;
+    notifyListeners();
+  }
 
   Map<String, DownloadInfo> get downloads => Map.unmodifiable(_downloads);
 
@@ -172,13 +179,16 @@ class DownloadProvider extends ChangeNotifier {
       );
       notifyListeners();
 
-      // Auto-install after download completes
-      try {
-        await installApk(filePath);
-        // Delete the file after successful installation
-        await deleteDownloadedFile(filePath);
-      } catch (e) {
-        debugPrint('Auto-install failed: $e');
+      // Auto-install after download completes if enabled
+      if (_settingsProvider.autoInstallApk) {
+        try {
+          await installApk(filePath);
+          if (_settingsProvider.autoDeleteApk) {
+            await deleteDownloadedFile(filePath);
+          }
+        } catch (e) {
+          debugPrint('Auto-install failed: $e');
+        }
       }
 
       return filePath;
@@ -223,6 +233,14 @@ class DownloadProvider extends ChangeNotifier {
           info.status == DownloadStatus.cancelled,
     );
     notifyListeners();
+  }
+
+  /// Clears all tracked downloads and deletes APK files from storage.
+  Future<int> clearAllDownloads() async {
+    final deleted = await _apiService.clearDownloadedApks();
+    _downloads.clear();
+    notifyListeners();
+    return deleted;
   }
 
   /// Gets all active downloads

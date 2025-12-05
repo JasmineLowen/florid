@@ -104,6 +104,19 @@ class FDroidApiService {
     }
   }
 
+  /// Clears the cached repository index from disk and memory.
+  Future<void> clearRepositoryCache() async {
+    try {
+      final file = await _cacheFile();
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {
+      // Ignore cache clear failures
+    }
+    _cachedRawJson = null;
+  }
+
   /// Fetches apps with pagination support
   Future<List<FDroidApp>> fetchApps({
     int? limit,
@@ -286,6 +299,33 @@ class FDroidApiService {
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Deletes all downloaded APK files from the app's Downloads directory.
+  /// Returns the number of files deleted.
+  Future<int> clearDownloadedApks() async {
+    try {
+      final directory = await getExternalStorageDirectory();
+      if (directory == null) return 0;
+
+      final downloadsDir = Directory('${directory.path}/Downloads');
+      if (!await downloadsDir.exists()) return 0;
+
+      int deleted = 0;
+      await for (final entity in downloadsDir.list()) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.apk')) {
+          try {
+            await entity.delete();
+            deleted++;
+          } catch (_) {
+            // ignore deletion failures
+          }
+        }
+      }
+      return deleted;
+    } catch (_) {
+      return 0;
     }
   }
 
