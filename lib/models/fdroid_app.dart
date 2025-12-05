@@ -1,0 +1,596 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'fdroid_app.g.dart';
+
+@JsonSerializable()
+class FDroidApp {
+  final String packageName;
+  final String name;
+  final String summary;
+  final String description;
+  final String? icon;
+  final String? authorName;
+  final String? authorEmail;
+  final String? authorWebSite;
+  final String? webSite;
+  final String? issueTracker;
+  final String? sourceCode;
+  final String? changelog;
+  final String? donate;
+  final String? bitcoin;
+  final String? flattrID;
+  final String license;
+  final List<String>? categories;
+  final Map<String, FDroidVersion>? packages;
+  final String? suggestedVersionName;
+  final int? suggestedVersionCode;
+  final DateTime? added;
+  final DateTime? lastUpdated;
+
+  const FDroidApp({
+    required this.packageName,
+    required this.name,
+    required this.summary,
+    required this.description,
+    this.icon,
+    this.authorName,
+    this.authorEmail,
+    this.authorWebSite,
+    this.webSite,
+    this.issueTracker,
+    this.sourceCode,
+    this.changelog,
+    this.donate,
+    this.bitcoin,
+    this.flattrID,
+    required this.license,
+    this.categories,
+    this.packages,
+    this.suggestedVersionName,
+    this.suggestedVersionCode,
+    this.added,
+    this.lastUpdated,
+  });
+
+  factory FDroidApp.fromJson(Map<String, dynamic> json) =>
+      _$FDroidAppFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FDroidAppToJson(this);
+
+  String get iconUrl => icon != null
+      ? 'https://f-droid.org/repo/icons-640/$icon'
+      : 'https://f-droid.org/repo/icons-640/default.png';
+
+  /// Returns multiple candidate icon URLs with improved F-Droid compatibility.
+  /// F-Droid icons are often stored with specific naming patterns.
+  List<String> get iconUrls {
+    final urls = <String>[];
+    final seen = <String>{};
+
+    void add(String url) {
+      if (url.isEmpty || seen.contains(url)) return;
+      seen.add(url);
+      urls.add(url);
+    }
+
+    String build(String bucket, String path) =>
+        'https://f-droid.org/repo/$bucket/$path';
+    String direct(String path) => 'https://f-droid.org/repo/$path';
+
+    if (icon != null && icon!.isNotEmpty) {
+      final iconPath = icon!;
+      final parts = iconPath.split('/');
+      final fileName = parts.isNotEmpty ? parts.last : iconPath;
+      final packageDir = parts.isNotEmpty ? parts.first : packageName;
+
+      // Direct path as provided by the index (observed in index-v2).
+      add(direct(iconPath));
+
+      // Path as provided by the index (may include locale subfolders).
+      for (final bucket in const [
+        'icons-640',
+        'icons-320',
+        'icons-160',
+        'icons',
+      ]) {
+        add(build(bucket, iconPath));
+      }
+
+      // Flattened filename (strip directories).
+      for (final bucket in const [
+        'icons-640',
+        'icons-320',
+        'icons-160',
+        'icons',
+      ]) {
+        add(build(bucket, fileName));
+      }
+
+      // Package directory + filename (common F-Droid layout: package/file.png).
+      for (final bucket in const [
+        'icons-640',
+        'icons-320',
+        'icons-160',
+        'icons',
+      ]) {
+        add(build(bucket, '$packageDir/$fileName'));
+      }
+
+      // Direct package dir + filename (mirrors actual hosting seen in sample index).
+      add(direct('$packageDir/$fileName'));
+    }
+
+    // Package-name based fallbacks last, but only if icon metadata exists to avoid noisy 404s on apps without icons.
+    if (icon != null && icon!.isNotEmpty) {
+      for (final bucket in const [
+        'icons-640',
+        'icons-320',
+        'icons-160',
+        'icons',
+      ]) {
+        add(build(bucket, '$packageName.png'));
+      }
+    }
+
+    // Final fallback - reliable default icon.
+    add('https://f-droid.org/assets/fdroid-logo.png');
+
+    return urls;
+  }
+
+  String get categoryString => categories?.join(', ') ?? 'Unknown';
+
+  FDroidVersion? get latestVersion {
+    if (packages == null || packages!.isEmpty) return null;
+    final versions = packages!.values.toList();
+    versions.sort((a, b) => b.versionCode.compareTo(a.versionCode));
+    return versions.first;
+  }
+}
+
+@JsonSerializable()
+class FDroidVersion {
+  final int versionCode;
+  final String versionName;
+  final int size;
+  final String? minSdkVersion;
+  final String? targetSdkVersion;
+  final String? maxSdkVersion;
+  final DateTime added;
+  final String apkName;
+  final String hash;
+  final String hashType;
+  final String? sig;
+  final List<String>? permissions;
+  final List<String>? features;
+  final List<String>? nativecode;
+
+  const FDroidVersion({
+    required this.versionCode,
+    required this.versionName,
+    required this.size,
+    this.minSdkVersion,
+    this.targetSdkVersion,
+    this.maxSdkVersion,
+    required this.added,
+    required this.apkName,
+    required this.hash,
+    required this.hashType,
+    this.sig,
+    this.permissions,
+    this.features,
+    this.nativecode,
+  });
+
+  factory FDroidVersion.fromJson(Map<String, dynamic> json) =>
+      _$FDroidVersionFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FDroidVersionToJson(this);
+
+  String get downloadUrl => 'https://f-droid.org/repo/$apkName';
+
+  String get sizeString {
+    if (size <= 0) return 'Unknown';
+    if (size < 1024) return '${size}B';
+    if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)}KB';
+    return '${(size / (1024 * 1024)).toStringAsFixed(1)}MB';
+  }
+}
+
+@JsonSerializable()
+class FDroidCategory {
+  final String id;
+  final String name;
+  final String description;
+  final int appCount;
+
+  const FDroidCategory({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.appCount,
+  });
+
+  factory FDroidCategory.fromJson(Map<String, dynamic> json) =>
+      _$FDroidCategoryFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FDroidCategoryToJson(this);
+}
+
+class FDroidRepository {
+  final String name;
+  final String description;
+  final String icon;
+  final String timestamp; // raw timestamp string/number converted to string
+  final String version;
+  final int maxage;
+  final Map<String, FDroidApp> apps; // keyed by package name
+
+  const FDroidRepository({
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.timestamp,
+    required this.version,
+    required this.maxage,
+    required this.apps,
+  });
+
+  /// Custom parser for F-Droid index-v2.json structure.
+  /// The official schema (simplified) is:
+  /// {
+  ///   "repo": { "name": ..., "description": ..., "icon": ..., "timestamp": <epoch>, "version": ..., "maxage": ... },
+  ///   "packages": {
+  ///       "org.example.app": {
+  ///          "metadata": { ... app fields ... },
+  ///          "versions": { "100": { ... version fields ... }, ... }
+  ///       },
+  ///       ...
+  ///   }
+  /// }
+  factory FDroidRepository.fromJson(Map<String, dynamic> json) {
+    final repoMeta =
+        (json['repo'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
+    final packages =
+        (json['packages'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
+
+    DateTime parseEpochOrIso(dynamic v) {
+      if (v == null) return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      if (v is int) {
+        // F-Droid uses seconds since epoch
+        if (v.toString().length <= 10) {
+          return DateTime.fromMillisecondsSinceEpoch(v * 1000, isUtc: true);
+        }
+        return DateTime.fromMillisecondsSinceEpoch(v, isUtc: true);
+      }
+      if (v is String) {
+        // Try int first
+        final asInt = int.tryParse(v);
+        if (asInt != null) {
+          return DateTime.fromMillisecondsSinceEpoch(
+            (asInt.toString().length <= 10 ? asInt * 1000 : asInt),
+            isUtc: true,
+          );
+        }
+        return DateTime.tryParse(v) ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      }
+      return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    }
+
+    final Map<String, FDroidApp> apps = {};
+
+    packages.forEach((pkgName, pkgData) {
+      try {
+        final pkgMap = (pkgData as Map).cast<String, dynamic>();
+        final metadata =
+            (pkgMap['metadata'] as Map?)?.cast<String, dynamic>() ??
+            <String, dynamic>{};
+        final versionsMap =
+            (pkgMap['versions'] as Map?)?.cast<String, dynamic>() ??
+            <String, dynamic>{};
+
+        // Helper to extract a localized string: metadata fields sometimes
+        // appear as {'en-US': 'Value', 'de-DE': 'Wert'} instead of a plain String.
+        String extractLocalized(dynamic raw, {String? fallbackKey}) {
+          if (raw == null) return '';
+          // Plain string
+          if (raw is String) return raw;
+          if (raw is Map) {
+            // Try exact fallback key first
+            if (fallbackKey != null && raw[fallbackKey] is String) {
+              return raw[fallbackKey] as String;
+            }
+            // Try common English keys
+            const englishPrefs = ['en-US', 'en', 'en_GB'];
+            for (final key in englishPrefs) {
+              if (raw[key] is String) return raw[key] as String;
+            }
+            // Otherwise first string value
+            for (final value in raw.values) {
+              if (value is String) return value;
+            }
+          }
+          return raw.toString();
+        }
+
+        final Map<String, FDroidVersion> versionObjs = {};
+        versionsMap.forEach((vCodeKey, vData) {
+          try {
+            final versionData = (vData as Map).cast<String, dynamic>();
+
+            final manifest =
+                (versionData['manifest'] as Map?)?.cast<String, dynamic>() ??
+                <String, dynamic>{};
+            final usesSdk =
+                (manifest['usesSdk'] as Map?)?.cast<String, dynamic>() ??
+                <String, dynamic>{};
+            final fileMap = (versionData['file'] as Map?)
+                ?.cast<String, dynamic>();
+
+            int versionCode =
+                int.tryParse(vCodeKey.toString()) ??
+                int.tryParse(versionData['versionCode']?.toString() ?? '') ??
+                (manifest['versionCode'] as int? ?? 0);
+
+            String versionName =
+                (versionData['versionName'] ??
+                        manifest['versionName'] ??
+                        versionData['name'] ??
+                        versionCode.toString())
+                    .toString();
+
+            int size = 0;
+            final rawSize = versionData['size'] ?? fileMap?['size'];
+            if (rawSize is int)
+              size = rawSize;
+            else if (rawSize is String)
+              size = int.tryParse(rawSize) ?? 0;
+
+            final added = parseEpochOrIso(
+              versionData['timestamp'] ?? versionData['added'],
+            );
+
+            String apkName =
+                (versionData['apkName'] ??
+                        (versionData['file'] is String
+                            ? versionData['file']
+                            : fileMap?['name']) ??
+                        versionData['apk'] ??
+                        '')
+                    .toString();
+            while (apkName.startsWith('/')) {
+              apkName = apkName.substring(1);
+            }
+
+            String hash =
+                (versionData['hash'] ??
+                        versionData['sha256'] ??
+                        versionData['sha256sum'] ??
+                        fileMap?['sha256'] ??
+                        '')
+                    .toString();
+            String hashType =
+                (versionData['hashType'] ??
+                        (versionData['sha256'] != null ||
+                                versionData['sha256sum'] != null ||
+                                fileMap?['sha256'] != null
+                            ? 'sha256'
+                            : 'unknown'))
+                    .toString();
+
+            List<String>? permissions = (versionData['permissions'] as List?)
+                ?.map((e) => e.toString())
+                .toList();
+            permissions ??= (manifest['usesPermission'] as List?)
+                ?.map(
+                  (e) => e is Map && e['name'] != null
+                      ? e['name'].toString()
+                      : e.toString(),
+                )
+                .toList();
+
+            List<String>? features = (versionData['features'] as List?)
+                ?.map((e) => e.toString())
+                .toList();
+            features ??= (manifest['usesFeature'] as List?)
+                ?.map(
+                  (e) => e is Map && e['name'] != null
+                      ? e['name'].toString()
+                      : e.toString(),
+                )
+                .toList();
+
+            List<String>? nativecode = (versionData['nativecode'] as List?)
+                ?.map((e) => e.toString())
+                .toList();
+            nativecode ??= (manifest['nativecode'] as List?)
+                ?.map((e) => e.toString())
+                .toList();
+
+            final minSdkVersion = usesSdk['minSdkVersion']?.toString();
+            final targetSdkVersion = usesSdk['targetSdkVersion']?.toString();
+            final maxSdkVersion = usesSdk['maxSdkVersion']?.toString();
+
+            if (apkName.isEmpty) {
+              // Skip invalid version entries without an APK reference
+              return;
+            }
+
+            versionObjs[versionCode.toString()] = FDroidVersion(
+              versionCode: versionCode,
+              versionName: versionName,
+              size: size,
+              added: added,
+              apkName: apkName,
+              hash: hash,
+              hashType: hashType,
+              permissions: permissions,
+              features: features,
+              nativecode: nativecode,
+              minSdkVersion: minSdkVersion,
+              targetSdkVersion: targetSdkVersion,
+              maxSdkVersion: maxSdkVersion,
+            );
+          } catch (_) {
+            // Silently skip malformed version; could add logging hook
+          }
+        });
+
+        DateTime? added;
+        DateTime? lastUpdated;
+        final addedRaw = metadata['added'] ?? metadata['firstAdded'];
+        final updatedRaw =
+            metadata['lastUpdated'] ??
+            metadata['updated'] ??
+            metadata['modified'];
+        if (addedRaw != null) added = parseEpochOrIso(addedRaw);
+        if (updatedRaw != null) lastUpdated = parseEpochOrIso(updatedRaw);
+
+        // Icon field in index-v2 can itself be localized or a structured map:
+        // e.g., {"en-US": {"name": "/com.foo/icon_x.png", "size":123, "sha256":"..."}}
+        String normalizeIconPath(String raw) {
+          var trimmed = raw.trim();
+          if (trimmed.isEmpty) return trimmed;
+          while (trimmed.startsWith('/')) {
+            trimmed = trimmed.substring(1);
+          }
+          if (trimmed.contains('{')) return '';
+          // If path contains directories, keep them (repo may store hashed under dirs), but
+          // we still allow filename-only variants later.
+          return trimmed;
+        }
+
+        String? extractIcon(dynamic raw) {
+          if (raw == null) return null;
+          if (raw is String) return normalizeIconPath(raw);
+          if (raw is Map) {
+            // Try English locales first
+            const englishPrefs = ['en-US', 'en', 'en_GB'];
+            for (final key in englishPrefs) {
+              final val = raw[key];
+              if (val is String) return normalizeIconPath(val);
+              if (val is Map && val['name'] is String) {
+                return normalizeIconPath(val['name'] as String);
+              }
+            }
+            // Fallback: search any nested map with a 'name'
+            for (final v in raw.values) {
+              if (v is Map && v['name'] is String) {
+                return normalizeIconPath(v['name'] as String);
+              }
+              if (v is String) return normalizeIconPath(v);
+            }
+          }
+          return null;
+        }
+
+        final app = FDroidApp(
+          packageName: pkgName,
+          name: extractLocalized(
+            metadata['name'] ?? metadata['appName'] ?? pkgName,
+          ),
+          // Some entries have very sparse metadata; provide safe fallbacks
+          summary: extractLocalized(
+            metadata['summary'] ?? metadata['shortDescription'],
+          ),
+          description: extractLocalized(
+            metadata['description'] ??
+                metadata['longDescription'] ??
+                metadata['summary'],
+          ),
+          icon: extractIcon(metadata['icon']),
+          authorName: metadata['authorName']?.toString(),
+          authorEmail: metadata['authorEmail']?.toString(),
+          authorWebSite: metadata['authorWebSite']?.toString(),
+          webSite: metadata['webSite']?.toString(),
+          issueTracker: metadata['issueTracker']?.toString(),
+          sourceCode: metadata['sourceCode']?.toString(),
+          changelog: metadata['changelog']?.toString(),
+          donate: metadata['donate']?.toString(),
+          bitcoin: metadata['bitcoin']?.toString(),
+          flattrID: metadata['flattrID']?.toString(),
+          license: (metadata['license'] ?? 'Unknown').toString(),
+          categories: (metadata['categories'] as List?)
+              ?.map((e) => e.toString())
+              .toList(),
+          packages: versionObjs.isEmpty
+              ? null
+              : versionObjs.map((k, v) => MapEntry(k, v)),
+          suggestedVersionName: metadata['suggestedVersionName']?.toString(),
+          suggestedVersionCode: metadata['suggestedVersionCode'] is int
+              ? metadata['suggestedVersionCode'] as int
+              : int.tryParse(
+                  metadata['suggestedVersionCode']?.toString() ?? '',
+                ),
+          added: added,
+          lastUpdated: lastUpdated,
+        );
+
+        apps[pkgName] = app;
+      } catch (_) {
+        // Skip whole package if malformed
+      }
+    });
+
+    return FDroidRepository(
+      name: (repoMeta['name'] ?? 'F-Droid').toString(),
+      description: (repoMeta['description'] ?? '').toString(),
+      icon: (repoMeta['icon'] ?? '').toString(),
+      timestamp: (repoMeta['timestamp'] ?? repoMeta['lastUpdated'] ?? '')
+          .toString(),
+      version: (repoMeta['version'] ?? '').toString(),
+      maxage: repoMeta['maxage'] is int
+          ? repoMeta['maxage'] as int
+          : int.tryParse(repoMeta['maxage']?.toString() ?? '0') ?? 0,
+      apps: apps,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'description': description,
+    'icon': icon,
+    'timestamp': timestamp,
+    'version': version,
+    'maxage': maxage,
+    'apps': apps.map((k, v) => MapEntry(k, v.toJson())),
+  };
+
+  List<FDroidApp> get appsList => apps.values.toList();
+
+  List<FDroidApp> get latestApps {
+    final sortedApps = appsList.where((app) => app.added != null).toList();
+    sortedApps.sort((a, b) => b.added!.compareTo(a.added!));
+    return sortedApps.take(50).toList();
+  }
+
+  List<String> get categories {
+    final categorySet = <String>{};
+    for (final app in appsList) {
+      if (app.categories != null) {
+        categorySet.addAll(app.categories!);
+      }
+    }
+    final categories = categorySet.toList();
+    categories.sort();
+    return categories;
+  }
+
+  List<FDroidApp> getAppsByCategory(String category) {
+    return appsList
+        .where((app) => app.categories?.contains(category) ?? false)
+        .toList();
+  }
+
+  List<FDroidApp> searchApps(String query) {
+    final lowerQuery = query.toLowerCase();
+    return appsList.where((app) {
+      return app.name.toLowerCase().contains(lowerQuery) ||
+          app.summary.toLowerCase().contains(lowerQuery) ||
+          app.description.toLowerCase().contains(lowerQuery) ||
+          app.packageName.toLowerCase().contains(lowerQuery);
+    }).toList();
+  }
+}
