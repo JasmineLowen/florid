@@ -57,10 +57,10 @@ dependencies:
   shared_preferences: ^2.3.2
   
   # Permission handler for Android permissions
-  permission_handler: ^11.3.0
+  permission_handler: ^12.0.1
   
   # Package info for app version checking
-  package_info_plus: ^4.2.0
+  package_info_plus: ^9.0.0
   
   # Cached network image for app icons
   cached_network_image: ^3.3.1
@@ -75,13 +75,13 @@ dependencies:
   app_installer: ^1.1.0
   
   # Share plus for sharing apps
-  share_plus: ^7.2.2
+  share_plus: ^12.0.1
 
   # Detect installed applications on Android
   installed_apps: ^2.0.0
 
   # Launch Android intents (used for uninstall)
-  android_intent_plus: ^5.0.2
+  android_intent_plus: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -92,7 +92,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   
   # Code generation for JSON serialization
   json_serializable: ^6.7.1
