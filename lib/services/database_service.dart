@@ -318,9 +318,11 @@ class DatabaseService {
     final db = await database;
     final appMaps = await db.query(_appsTable);
 
+    if (appMaps.isEmpty) return [];
+
     // Batch load all categories and versions for all apps at once
     final allCategories = await db.query(_appCategoriesTable);
-    final allVersions = await db.query(_versionsTable);
+    final allVersions = await db.query(_versionsTable, orderBy: 'version_code DESC');
 
     // Group by package name for efficient lookup
     final categoriesByPackage = <String, List<String>>{};
@@ -377,6 +379,7 @@ class DatabaseService {
       _versionsTable,
       where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
+      orderBy: 'version_code DESC',
     );
 
     // Group by package name
@@ -444,6 +447,7 @@ class DatabaseService {
       _versionsTable,
       where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
+      orderBy: 'version_code DESC',
     );
 
     // Group by package name
@@ -503,6 +507,7 @@ class DatabaseService {
       _versionsTable,
       where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
+      orderBy: 'version_code DESC',
     );
 
     // Group by package name
