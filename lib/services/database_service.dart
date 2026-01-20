@@ -139,6 +139,9 @@ class DatabaseService {
   }
 
   /// Sets the current locale for localized data extraction
+  /// Note: Currently, localized strings are extracted during JSON import
+  /// using the FDroidRepository.fromJson method. This locale setting is
+  /// reserved for future enhancements to support dynamic locale switching.
   void setLocale(String locale) {
     _currentLocale = locale;
   }

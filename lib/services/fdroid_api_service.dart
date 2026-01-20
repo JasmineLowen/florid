@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -98,7 +99,7 @@ class FDroidApiService {
         
         // Store in database asynchronously (don't wait for it)
         _databaseService.importRepository(repo).catchError((e) {
-          print('Error importing to database: $e');
+          debugPrint('Error importing to database: $e');
         });
         
         // Also save JSON cache for screenshot extraction
@@ -114,7 +115,7 @@ class FDroidApiService {
         try {
           return await _loadRepositoryFromDatabase();
         } catch (dbError) {
-          print('Error loading from database fallback: $dbError');
+          debugPrint('Error loading from database fallback: $dbError');
         }
       }
       
