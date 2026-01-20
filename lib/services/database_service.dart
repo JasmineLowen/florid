@@ -313,13 +313,38 @@ class DatabaseService {
   }
 
   /// Gets all apps from the database
+  /// Uses optimized batch loading to avoid N+1 query problem
   Future<List<FDroidApp>> getAllApps() async {
     final db = await database;
     final appMaps = await db.query(_appsTable);
 
+    // Batch load all categories and versions for all apps at once
+    final allCategories = await db.query(_appCategoriesTable);
+    final allVersions = await db.query(_versionsTable);
+
+    // Group by package name for efficient lookup
+    final categoriesByPackage = <String, List<String>>{};
+    for (final catRow in allCategories) {
+      final pkg = catRow['package_name'] as String;
+      final cat = catRow['category'] as String;
+      categoriesByPackage.putIfAbsent(pkg, () => []).add(cat);
+    }
+
+    final versionsByPackage = <String, List<Map<String, dynamic>>>{};
+    for (final verRow in allVersions) {
+      final pkg = verRow['package_name'] as String;
+      versionsByPackage.putIfAbsent(pkg, () => []).add(verRow);
+    }
+
+    // Build apps with pre-loaded data
     final apps = <FDroidApp>[];
     for (final appMap in appMaps) {
-      final app = await _mapToApp(appMap);
+      final packageName = appMap['package_name'] as String;
+      final app = _mapToAppWithData(
+        appMap,
+        categoriesByPackage[packageName] ?? [],
+        versionsByPackage[packageName] ?? [],
+      );
       apps.add(app);
     }
 
@@ -336,9 +361,46 @@ class DatabaseService {
       limit: limit,
     );
 
+    // Get package names from the limited result set
+    final packageNames = appMaps.map((m) => m['package_name'] as String).toList();
+    
+    if (packageNames.isEmpty) return [];
+
+    // Batch load categories and versions for these specific apps
+    final categoriesResults = await db.query(
+      _appCategoriesTable,
+      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      whereArgs: packageNames,
+    );
+
+    final versionsResults = await db.query(
+      _versionsTable,
+      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      whereArgs: packageNames,
+    );
+
+    // Group by package name
+    final categoriesByPackage = <String, List<String>>{};
+    for (final catRow in categoriesResults) {
+      final pkg = catRow['package_name'] as String;
+      final cat = catRow['category'] as String;
+      categoriesByPackage.putIfAbsent(pkg, () => []).add(cat);
+    }
+
+    final versionsByPackage = <String, List<Map<String, dynamic>>>{};
+    for (final verRow in versionsResults) {
+      final pkg = verRow['package_name'] as String;
+      versionsByPackage.putIfAbsent(pkg, () => []).add(verRow);
+    }
+
     final apps = <FDroidApp>[];
     for (final appMap in appMaps) {
-      final app = await _mapToApp(appMap);
+      final packageName = appMap['package_name'] as String;
+      final app = _mapToAppWithData(
+        appMap,
+        categoriesByPackage[packageName] ?? [],
+        versionsByPackage[packageName] ?? [],
+      );
       apps.add(app);
     }
 
@@ -366,9 +428,46 @@ class DatabaseService {
       ORDER BY a.name ASC
     ''', [category]);
 
+    if (appMaps.isEmpty) return [];
+
+    // Get package names from the result set
+    final packageNames = appMaps.map((m) => m['package_name'] as String).toList();
+
+    // Batch load all categories and versions for these apps
+    final categoriesResults = await db.query(
+      _appCategoriesTable,
+      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      whereArgs: packageNames,
+    );
+
+    final versionsResults = await db.query(
+      _versionsTable,
+      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      whereArgs: packageNames,
+    );
+
+    // Group by package name
+    final categoriesByPackage = <String, List<String>>{};
+    for (final catRow in categoriesResults) {
+      final pkg = catRow['package_name'] as String;
+      final cat = catRow['category'] as String;
+      categoriesByPackage.putIfAbsent(pkg, () => []).add(cat);
+    }
+
+    final versionsByPackage = <String, List<Map<String, dynamic>>>{};
+    for (final verRow in versionsResults) {
+      final pkg = verRow['package_name'] as String;
+      versionsByPackage.putIfAbsent(pkg, () => []).add(verRow);
+    }
+
     final apps = <FDroidApp>[];
     for (final appMap in appMaps) {
-      final app = await _mapToApp(appMap);
+      final packageName = appMap['package_name'] as String;
+      final app = _mapToAppWithData(
+        appMap,
+        categoriesByPackage[packageName] ?? [],
+        versionsByPackage[packageName] ?? [],
+      );
       apps.add(app);
     }
 
@@ -388,9 +487,46 @@ class DatabaseService {
       ORDER BY name ASC
     ''', [searchTerm, searchTerm, searchTerm, searchTerm]);
 
+    if (appMaps.isEmpty) return [];
+
+    // Get package names from the result set
+    final packageNames = appMaps.map((m) => m['package_name'] as String).toList();
+
+    // Batch load all categories and versions for these apps
+    final categoriesResults = await db.query(
+      _appCategoriesTable,
+      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      whereArgs: packageNames,
+    );
+
+    final versionsResults = await db.query(
+      _versionsTable,
+      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      whereArgs: packageNames,
+    );
+
+    // Group by package name
+    final categoriesByPackage = <String, List<String>>{};
+    for (final catRow in categoriesResults) {
+      final pkg = catRow['package_name'] as String;
+      final cat = catRow['category'] as String;
+      categoriesByPackage.putIfAbsent(pkg, () => []).add(cat);
+    }
+
+    final versionsByPackage = <String, List<Map<String, dynamic>>>{};
+    for (final verRow in versionsResults) {
+      final pkg = verRow['package_name'] as String;
+      versionsByPackage.putIfAbsent(pkg, () => []).add(verRow);
+    }
+
     final apps = <FDroidApp>[];
     for (final appMap in appMaps) {
-      final app = await _mapToApp(appMap);
+      final packageName = appMap['package_name'] as String;
+      final app = _mapToAppWithData(
+        appMap,
+        categoriesByPackage[packageName] ?? [],
+        versionsByPackage[packageName] ?? [],
+      );
       apps.add(app);
     }
 
@@ -410,31 +546,15 @@ class DatabaseService {
     return await _mapToApp(results.first);
   }
 
-  /// Converts a database row to an FDroidApp
-  Future<FDroidApp> _mapToApp(Map<String, dynamic> appMap) async {
-    final packageName = appMap['package_name'] as String;
-
-    // Get categories
-    final db = await database;
-    final categoryResults = await db.query(
-      _appCategoriesTable,
-      where: 'package_name = ?',
-      whereArgs: [packageName],
-    );
-    final categories = categoryResults
-        .map((row) => row['category'] as String)
-        .toList();
-
-    // Get versions
-    final versionResults = await db.query(
-      _versionsTable,
-      where: 'package_name = ?',
-      whereArgs: [packageName],
-      orderBy: 'version_code DESC',
-    );
-
+  /// Converts a database row to an FDroidApp with pre-loaded data
+  /// This version accepts pre-loaded categories and versions to avoid N+1 queries
+  FDroidApp _mapToAppWithData(
+    Map<String, dynamic> appMap,
+    List<String> categories,
+    List<Map<String, dynamic>> versionMaps,
+  ) {
     final packages = <String, FDroidVersion>{};
-    for (final versionMap in versionResults) {
+    for (final versionMap in versionMaps) {
       final version = FDroidVersion(
         versionCode: versionMap['version_code'] as int,
         versionName: versionMap['version_name'] as String,
@@ -463,7 +583,7 @@ class DatabaseService {
     }
 
     return FDroidApp(
-      packageName: packageName,
+      packageName: appMap['package_name'] as String,
       name: appMap['name'] as String,
       summary: appMap['summary'] as String,
       description: appMap['description'] as String,
@@ -490,6 +610,33 @@ class DatabaseService {
           ? DateTime.fromMillisecondsSinceEpoch(appMap['last_updated'] as int)
           : null,
     );
+  }
+
+  /// Converts a database row to an FDroidApp (for single app queries)
+  /// This version makes individual queries for categories and versions
+  Future<FDroidApp> _mapToApp(Map<String, dynamic> appMap) async {
+    final packageName = appMap['package_name'] as String;
+
+    // Get categories
+    final db = await database;
+    final categoryResults = await db.query(
+      _appCategoriesTable,
+      where: 'package_name = ?',
+      whereArgs: [packageName],
+    );
+    final categories = categoryResults
+        .map((row) => row['category'] as String)
+        .toList();
+
+    // Get versions
+    final versionResults = await db.query(
+      _versionsTable,
+      where: 'package_name = ?',
+      whereArgs: [packageName],
+      orderBy: 'version_code DESC',
+    );
+
+    return _mapToAppWithData(appMap, categories, versionResults);
   }
 
   /// Closes the database
