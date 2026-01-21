@@ -17,11 +17,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  final ValueNotifier<int> _tabNotifier = ValueNotifier<int>(0);
 
-  final List<Widget> _screens = const [
-    LibraryScreen(),
-    SearchScreen(),
-    UpdatesScreen(),
+  late final List<Widget> _screens = [
+    const LibraryScreen(),
+    SearchScreen(tabIndexListenable: _tabNotifier, tabIndex: 1),
+    const UpdatesScreen(),
   ];
 
   @override
@@ -32,6 +33,12 @@ class _HomeScreenState extends State<HomeScreen> {
       final appProvider = context.read<AppProvider>();
       appProvider.fetchInstalledApps();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabNotifier.dispose();
+    super.dispose();
   }
 
   final List<NavigationDestination> _destinations = const [
@@ -110,6 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _currentIndex = index;
           });
+          _tabNotifier.value = index;
         },
         destinations: _destinations,
       ),
