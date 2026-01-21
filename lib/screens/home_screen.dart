@@ -1,10 +1,9 @@
+import 'package:florid/screens/library_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
-import 'categories_screen.dart';
-import 'latest_screen.dart';
 import 'search_screen.dart';
 import 'settings_screen.dart';
 import 'updates_screen.dart';
@@ -20,8 +19,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
-    LatestScreen(),
-    CategoriesScreen(),
+    LibraryScreen(),
+    SearchScreen(),
     UpdatesScreen(),
   ];
 
@@ -37,18 +36,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<NavigationDestination> _destinations = const [
     NavigationDestination(
-      icon: Icon(Symbols.new_releases),
-      selectedIcon: Icon(Symbols.new_releases),
-      label: 'Latest',
+      icon: Icon(Symbols.home),
+      selectedIcon: Icon(Symbols.home, fill: 1),
+      label: 'Library',
     ),
     NavigationDestination(
-      icon: Icon(Symbols.category),
-      selectedIcon: Icon(Symbols.category),
-      label: 'Categories',
+      icon: Icon(Symbols.search),
+      selectedIcon: Icon(Symbols.search, fill: 1),
+      label: 'Search',
     ),
     NavigationDestination(
       icon: Icon(Symbols.system_update),
-      selectedIcon: Icon(Symbols.system_update),
+      selectedIcon: Icon(Symbols.system_update, fill: 1),
       label: 'Updates',
     ),
   ];
@@ -56,60 +55,54 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Florid'),
-        actions: [
-          IconButton(
-            icon: const Icon(Symbols.search),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const SearchScreen()),
-              );
-            },
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              switch (value) {
-                case 'refresh':
-                  _refreshData();
-                  break;
-                case 'settings':
-                  _showSettings();
-                  break;
-                case 'about':
-                  _showAbout();
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'refresh',
-                child: ListTile(
-                  leading: Icon(Symbols.refresh),
-                  title: Text('Refresh'),
-                  contentPadding: EdgeInsets.zero,
+      appBar: (_currentIndex == 0 || _currentIndex == 2)
+          ? AppBar(
+              title: const Text('Florid'),
+              actions: [
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'refresh':
+                        _refreshData();
+                        break;
+                      case 'settings':
+                        _showSettings();
+                        break;
+                      case 'about':
+                        _showAbout();
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'refresh',
+                      child: ListTile(
+                        leading: Icon(Symbols.refresh),
+                        title: Text('Refresh'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: ListTile(
+                        leading: Icon(Symbols.settings),
+                        title: Text('Settings'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'about',
+                      child: ListTile(
+                        leading: Icon(Symbols.info),
+                        title: Text('About'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const PopupMenuItem(
-                value: 'settings',
-                child: ListTile(
-                  leading: Icon(Symbols.settings),
-                  title: Text('Settings'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'about',
-                child: ListTile(
-                  leading: Icon(Symbols.info),
-                  title: Text('About'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+              ],
+            )
+          : null,
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

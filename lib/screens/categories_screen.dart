@@ -50,7 +50,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(year2023: false,),
+                CircularProgressIndicator(year2023: false),
                 SizedBox(height: 16),
                 Text('Loading categories...'),
               ],
@@ -113,7 +113,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.1,
+              childAspectRatio: 2,
             ),
             itemCount: categories.length,
             itemBuilder: (context, index) {
@@ -269,36 +269,30 @@ class _CategoryCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              categoryColor.withOpacity(0.05),
-              categoryColor.withOpacity(0.2),
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        color: categoryColor.withOpacity(0.1),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            spacing: 8,
+            children: [
+              Icon(_getCategoryIcon(category), size: 32, color: categoryColor),
+              Expanded(
+                child: Text(
+                  category,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    // fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 24,
-          children: [
-            Icon(_getCategoryIcon(category), size: 32, color: categoryColor),
-            Text(
-              category,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              textScaler: TextScaler.linear(0.8),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ),
       ),
     );

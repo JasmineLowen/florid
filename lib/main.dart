@@ -72,7 +72,7 @@ class FloridApp extends StatelessWidget {
                 seedColor: Colors.green,
                 brightness: Brightness.light,
               ),
-              appBarTheme: const AppBarTheme(elevation: 0),
+              appBarTheme: const AppBarTheme(),
               useMaterial3: true,
             ),
             darkTheme: ThemeData(
@@ -80,7 +80,7 @@ class FloridApp extends StatelessWidget {
                 seedColor: Colors.green,
                 brightness: Brightness.dark,
               ),
-              appBarTheme: const AppBarTheme(elevation: 0),
+              appBarTheme: const AppBarTheme(),
               useMaterial3: true,
             ),
             themeMode: settings.themeMode,
