@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/fdroid_app.dart';
 import '../providers/settings_provider.dart';
 import '../services/fdroid_api_service.dart';
+import '../services/notification_service.dart';
 
 enum DownloadStatus { idle, downloading, completed, error, cancelled }
 
@@ -51,8 +52,19 @@ class DownloadProvider extends ChangeNotifier {
   final FDroidApiService _apiService;
   SettingsProvider _settingsProvider;
   final Map<String, DownloadInfo> _downloads = {};
+  final NotificationService _notificationService = NotificationService();
 
-  DownloadProvider(this._apiService, this._settingsProvider);
+  DownloadProvider(this._apiService, this._settingsProvider) {
+    _initNotifications();
+  }
+
+  Future<void> _initNotifications() async {
+    try {
+      await _notificationService.init();
+    } catch (e) {
+      debugPrint('[DownloadProvider] Failed to initialize notifications: $e');
+    }
+  }
 
   void updateSettings(SettingsProvider settings) {
     _settingsProvider = settings;
@@ -171,6 +183,14 @@ class DownloadProvider extends ChangeNotifier {
     );
     notifyListeners();
 
+    // Show initial notification
+    await _notificationService.showDownloadProgress(
+      title: app.name,
+      packageName: app.packageName,
+      progress: 0,
+      maxProgress: 100,
+    );
+
     try {
       final filePath = await _apiService.downloadApk(
         version,
@@ -178,6 +198,14 @@ class DownloadProvider extends ChangeNotifier {
         onProgress: (progress) {
           _downloads[key] = _downloads[key]!.copyWith(progress: progress);
           notifyListeners();
+
+          // Update notification with progress
+          _notificationService.showDownloadProgress(
+            title: app.name,
+            packageName: app.packageName,
+            progress: (progress * 100).toInt(),
+            maxProgress: 100,
+          );
         },
       );
 
@@ -187,6 +215,12 @@ class DownloadProvider extends ChangeNotifier {
         filePath: filePath,
       );
       notifyListeners();
+
+      // Show completion notification
+      await _notificationService.showDownloadComplete(
+        title: app.name,
+        packageName: app.packageName,
+      );
 
       // Auto-install after download completes if enabled
       if (_settingsProvider.autoInstallApk) {
@@ -205,6 +239,13 @@ class DownloadProvider extends ChangeNotifier {
       );
       notifyListeners();
 
+      // Show error notification
+      await _notificationService.showDownloadError(
+        title: app.name,
+        packageName: app.packageName,
+        error: e.toString(),
+      );
+
       rethrow;
     }
   }
@@ -220,6 +261,9 @@ class DownloadProvider extends ChangeNotifier {
 
       _downloads[key] = info!.copyWith(status: DownloadStatus.cancelled);
       notifyListeners();
+
+      // Cancel the notification
+      _notificationService.cancelDownloadNotification();
     }
   }
 

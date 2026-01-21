@@ -18,6 +18,12 @@
     <!-- Permission for package installer -->
     <uses-permission android:name="android.permission.INSTALL_PACKAGES"
                      tools:ignore="ProtectedPermissions" />
+    
+    <!-- Permission to post notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Permission to vibrate for notification alerts -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:label="florid"
@@ -62,6 +68,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        
+            <!-- Notification broadcast receivers for flutter_local_notifications -->
+            <receiver 
+                android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
+                android:exported="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
