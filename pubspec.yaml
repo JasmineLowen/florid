@@ -106,6 +106,7 @@ dev_dependencies:
   # Code generation for JSON serialization
   json_serializable: ^6.7.1
   build_runner: ^2.4.7
+  icons_launcher: ^3.0.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
