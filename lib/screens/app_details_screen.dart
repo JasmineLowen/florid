@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -213,29 +215,15 @@ class AppDetailsScreen extends StatelessWidget {
                                             ),
                                       ),
                                       if (isInstalled)
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Symbols.check_circle,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Installed${installedApp?.versionName != null ? ' (${installedApp!.versionName})' : ''}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurfaceVariant,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                            ),
-                                          ],
+                                        Chip(
+                                          visualDensity: VisualDensity.compact,
+                                          avatar: Icon(
+                                            Symbols.check_circle,
+                                            fill: 1,
+                                          ),
+                                          label: Text(
+                                            'Installed${installedApp?.versionName != null ? ' (${installedApp!.versionName})' : ''}',
+                                          ),
                                         ),
                                     ],
                                   ),
@@ -328,14 +316,19 @@ class AppDetailsScreen extends StatelessWidget {
   }
 }
 
-class _DownloadSection extends StatelessWidget {
+class _DownloadSection extends StatefulWidget {
   final FDroidApp app;
 
   const _DownloadSection({required this.app});
 
   @override
+  State<_DownloadSection> createState() => _DownloadSectionState();
+}
+
+class _DownloadSectionState extends State<_DownloadSection> {
+  @override
   Widget build(BuildContext context) {
-    if (app.latestVersion == null) {
+    if (widget.app.latestVersion == null) {
       return Container(
         width: double.infinity,
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -377,22 +370,32 @@ class _DownloadSection extends StatelessWidget {
 
     return Consumer2<DownloadProvider, AppProvider>(
       builder: (context, downloadProvider, appProvider, child) {
-        final version = app.latestVersion!;
-        final isInstalled = appProvider.isAppInstalled(app.packageName);
-        final installedApp = appProvider.getInstalledApp(app.packageName);
+        final version = widget.app.latestVersion!;
+        final isInstalled = appProvider.isAppInstalled(widget.app.packageName);
+        final installedApp = appProvider.getInstalledApp(
+          widget.app.packageName,
+        );
         final downloadInfo = downloadProvider.getDownloadInfo(
-          app.packageName,
+          widget.app.packageName,
           version.versionName,
         );
         final isDownloading =
             downloadInfo?.status == DownloadStatus.downloading;
         final isCancelled = downloadInfo?.status == DownloadStatus.cancelled;
+
+        // Check if file actually exists on disk (not just marked as completed)
+        // Use FutureBuilder to handle async file existence check
+        final fileExists = downloadInfo?.filePath != null
+            ? File(downloadInfo!.filePath!).existsSync()
+            : false;
+
         final isDownloaded =
             downloadInfo?.status == DownloadStatus.completed &&
             downloadInfo?.filePath != null &&
-            !isCancelled;
+            !isCancelled &&
+            fileExists;
         final progress = downloadProvider.getProgress(
-          app.packageName,
+          widget.app.packageName,
           version.versionName,
         );
 
@@ -479,7 +482,7 @@ class _DownloadSection extends StatelessWidget {
                         TextButton(
                           onPressed: () {
                             downloadProvider.cancelDownload(
-                              app.packageName,
+                              widget.app.packageName,
                               version.versionName,
                             );
                           },
@@ -508,22 +511,22 @@ class _DownloadSection extends StatelessWidget {
                             onPressed: () async {
                               try {
                                 await downloadProvider.uninstallApp(
-                                  app.packageName,
+                                  widget.app.packageName,
                                 );
                                 // Give system a moment to complete uninstall, then refresh
                                 await Future.delayed(
                                   const Duration(seconds: 1),
                                 );
                                 await appProvider.fetchInstalledApps();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '${app.name} uninstall initiated',
-                                      ),
-                                    ),
-                                  );
-                                }
+                                // if (context.mounted) {
+                                //   ScaffoldMessenger.of(context).showSnackBar(
+                                //     SnackBar(
+                                //       content: Text(
+                                //         '${widget.app.name} uninstall initiated',
+                                //       ),
+                                //     ),
+                                //   );
+                                // }
                               } catch (e) {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -545,12 +548,12 @@ class _DownloadSection extends StatelessWidget {
                             onPressed: () async {
                               try {
                                 final opened = await appProvider
-                                    .openInstalledApp(app.packageName);
+                                    .openInstalledApp(widget.app.packageName);
                                 if (!opened && context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        'Unable to open ${app.name}.',
+                                        'Unable to open ${widget.app.name}.',
                                       ),
                                     ),
                                   );
@@ -593,7 +596,7 @@ class _DownloadSection extends StatelessWidget {
                         // Install APK
                         try {
                           final downloadInfo = downloadProvider.getDownloadInfo(
-                            app.packageName,
+                            widget.app.packageName,
                             version.versionName,
                           );
                           if (downloadInfo?.filePath != null) {
@@ -625,7 +628,7 @@ class _DownloadSection extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    '${app.name} installation started!',
+                                    '${widget.app.name} installation started!',
                                   ),
                                 ),
                               );
@@ -686,7 +689,7 @@ class _DownloadSection extends StatelessWidget {
                         }
 
                         try {
-                          await downloadProvider.downloadApk(app);
+                          await downloadProvider.downloadApk(widget.app);
                           // No success message - auto-install handles feedback
 
                           // Poll for app installation to complete (auto-install is async)
@@ -697,12 +700,14 @@ class _DownloadSection extends StatelessWidget {
                                 const Duration(milliseconds: 800),
                               );
                               await appProvider.fetchInstalledApps();
-                              if (appProvider.isAppInstalled(app.packageName)) {
+                              if (appProvider.isAppInstalled(
+                                widget.app.packageName,
+                              )) {
                                 // App installed successfully, delete the APK file
                                 final downloadInfo = downloadProvider
                                     .getDownloadInfo(
-                                      app.packageName,
-                                      app.latestVersion!.versionName,
+                                      widget.app.packageName,
+                                      widget.app.latestVersion!.versionName,
                                     );
                                 if (downloadInfo?.filePath != null) {
                                   await downloadProvider.deleteDownloadedFile(

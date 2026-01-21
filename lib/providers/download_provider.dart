@@ -144,7 +144,13 @@ class DownloadProvider extends ChangeNotifier {
     }
     if (existingInfo?.status == DownloadStatus.completed &&
         existingInfo?.filePath != null) {
-      return existingInfo!.filePath;
+      // Verify the file actually exists before returning cached path
+      if (await File(existingInfo!.filePath!).exists()) {
+        return existingInfo.filePath;
+      } else {
+        // File was deleted, clear the cached entry
+        _downloads.remove(key);
+      }
     }
 
     // Check permissions
