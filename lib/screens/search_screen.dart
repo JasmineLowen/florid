@@ -1,3 +1,4 @@
+import 'package:florid/utils/menu_actions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -133,6 +134,36 @@ class _SearchScreenState extends State<SearchScreen> {
                 }
                 return const SizedBox.shrink();
               },
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'settings':
+                    MenuActions.showSettings(context);
+                    break;
+                  case 'about':
+                    MenuActions.showAbout(context);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: ListTile(
+                    leading: Icon(Symbols.settings),
+                    title: Text('Settings'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'about',
+                  child: ListTile(
+                    leading: Icon(Symbols.info),
+                    title: Text('About'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
             ),
             SizedBox(width: 8),
           ],

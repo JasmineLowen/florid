@@ -66,54 +66,54 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: (_currentIndex == 0 || _currentIndex == 2)
-          ? AppBar(
-              title: const Text('Florid'),
-              actions: [
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'refresh':
-                        _refreshData();
-                        break;
-                      case 'settings':
-                        _showSettings();
-                        break;
-                      case 'about':
-                        _showAbout();
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'refresh',
-                      child: ListTile(
-                        leading: Icon(Symbols.refresh),
-                        title: Text('Refresh'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'settings',
-                      child: ListTile(
-                        leading: Icon(Symbols.settings),
-                        title: Text('Settings'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'about',
-                      child: ListTile(
-                        leading: Icon(Symbols.info),
-                        title: Text('About'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            )
-          : null,
+      // appBar: (_currentIndex == 0 || _currentIndex == 2)
+      //     ? AppBar(
+      //         title: const Text('Florid'),
+      //         actions: [
+      //           PopupMenuButton<String>(
+      //             onSelected: (value) {
+      //               switch (value) {
+      //                 case 'refresh':
+      //                   _refreshData();
+      //                   break;
+      //                 case 'settings':
+      //                   _showSettings();
+      //                   break;
+      //                 case 'about':
+      //                   _showAbout();
+      //                   break;
+      //               }
+      //             },
+      //             itemBuilder: (context) => [
+      //               const PopupMenuItem(
+      //                 value: 'refresh',
+      //                 child: ListTile(
+      //                   leading: Icon(Symbols.refresh),
+      //                   title: Text('Refresh'),
+      //                   contentPadding: EdgeInsets.zero,
+      //                 ),
+      //               ),
+      //               const PopupMenuItem(
+      //                 value: 'settings',
+      //                 child: ListTile(
+      //                   leading: Icon(Symbols.settings),
+      //                   title: Text('Settings'),
+      //                   contentPadding: EdgeInsets.zero,
+      //                 ),
+      //               ),
+      //               const PopupMenuItem(
+      //                 value: 'about',
+      //                 child: ListTile(
+      //                   leading: Icon(Symbols.info),
+      //                   title: Text('About'),
+      //                   contentPadding: EdgeInsets.zero,
+      //                 ),
+      //               ),
+      //             ],
+      //           ),
+      //         ],
+      //       )
+      //     : null,
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
