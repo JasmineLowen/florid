@@ -43,6 +43,13 @@ android {
         multiDexEnabled = true
     }
 
+    dependenciesInfo {
+        // Disable including dependency metadata when building APKs
+        includeInApk = false
+        // Disable including dependency metadata when building Android App Bundles
+        includeInBundle = false
+    }
+
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
