@@ -7,6 +7,7 @@ import 'providers/download_provider.dart';
 import 'providers/repositories_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/home_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'services/database_service.dart';
 import 'services/fdroid_api_service.dart';
 import 'services/notification_service.dart';
@@ -96,7 +97,13 @@ class FloridApp extends StatelessWidget {
               useMaterial3: true,
             ),
             themeMode: settings.themeMode,
-            home: const HomeScreen(),
+            home: !settings.isLoaded
+                ? const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  )
+                : settings.onboardingComplete
+                ? const HomeScreen()
+                : const OnboardingScreen(),
           );
         },
       ),

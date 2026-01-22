@@ -183,10 +183,21 @@ class FDroidApiService {
   /// Fetches repository from a custom URL
   Future<FDroidRepository> fetchRepositoryFromUrl(String url) async {
     try {
-      // Ensure URL ends with /repo/index-v2.json
-      String indexUrl = url.endsWith('/') ? url : '$url/';
-      if (!indexUrl.endsWith('repo/index-v2.json')) {
-        indexUrl = '${indexUrl}repo/index-v2.json';
+      // Construct the index URL
+      String indexUrl;
+      if (url.endsWith('index-v2.json')) {
+        // Full URL provided
+        indexUrl = url;
+      } else if (url.endsWith('/repo') || url.endsWith('/repo/')) {
+        // URL already includes /repo path
+        indexUrl = url.endsWith('/')
+            ? '${url}index-v2.json'
+            : '$url/index-v2.json';
+      } else {
+        // Base URL without /repo
+        indexUrl = url.endsWith('/')
+            ? '${url}repo/index-v2.json'
+            : '$url/repo/index-v2.json';
       }
 
       // Derive repository base (strip the index file and trailing slash)
