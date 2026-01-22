@@ -1,156 +1,142 @@
-# Florid - F-Droid Client
+<div align="center">
 
-A modern F-Droid client for Android built with Flutter.
+# <img src="assets/Florid.png" alt="Florid logo" width="120" height="120" style="border-radius:99px; vertical-align:middle; margin-right:12px;" /> Florid — A Modern F‑Droid Client for Android
+
+Browse, search, and install open‑source Android apps from the F‑Droid repository with a clean Material 3 UI. Built with Flutter.
+
+</div>
 
 ## Features
 
-- **Latest Apps**: Browse recently added and updated apps from F-Droid
-- **Categories**: Explore apps organized by categories
-- **Updates**: Check for updates to your installed F-Droid apps
-- **Search**: Find apps with powerful search functionality
-- **App Details**: View detailed information about each app
-- **Downloads**: Download APK files with progress tracking
-- **Material Design 3**: Modern and beautiful user interface
+- Latest and trending: Browse recently added and updated apps
+- Categories: Explore apps organized by topic
+- Powerful search: Instant filtering by name, summary, description, or package
+- App details: Rich metadata, versions, permissions, links, and changelogs
+- Screenshots: Inline screenshots when available from the repo metadata
+- Downloads: Reliable APK downloads with progress and notifications
+- Install/uninstall: One‑tap install of downloaded APKs, uninstall via intent
+- Updates: Detect newer versions for apps installed on your device
+- Appearance: Material 3 design with light/dark and system themes
+- Localization: Choose repository content language (e.g., en‑US, de‑DE)
+- Offline cache: Fast local database with smart network/cache fallback
 
 ## Screenshots
 
-*Screenshots will be available after the app is built and tested*
-
-## Functionality
-
-### ✅ Implemented Features:
-- Browse latest apps from F-Droid repository
-- Browse apps by categories with beautiful category cards
-- Search functionality with suggestions
-- App details screen with comprehensive information
-- Download APK files with progress tracking
-- Check for updates to installed apps
-- Material Design 3 UI with light/dark theme support
-- State management with Provider
-- Cached network images for performance
-- Pull-to-refresh functionality
-
-### 🚧 Coming Soon:
-- APK installation functionality
-- Update all apps feature
-- Settings screen
-- Offline caching
-- Repository management
-- App screenshots gallery
-
-## Technical Details
-
-### Architecture:
-- **State Management**: Provider pattern
-- **API Integration**: HTTP client with F-Droid API
-- **UI Framework**: Flutter with Material Design 3
-- **Data Models**: JSON serialization with code generation
-- **Image Caching**: Cached network image loading
-- **Permissions**: Android permissions for storage and installation
-
-### F-Droid API:
-The app uses F-Droid's public API to fetch:
-- Repository index (index-v2.json)
-- App metadata and descriptions
-- Categories and search results
-- Version information and download URLs
-
-### File Structure:
-```
-lib/
-├── models/          # Data models (FDroidApp, FDroidVersion, etc.)
-├── providers/       # State management (AppProvider, DownloadProvider)
-├── screens/         # UI screens (Latest, Categories, Updates, etc.)
-├── services/        # API services (FDroidApiService)
-├── widgets/         # Reusable UI components
-└── main.dart        # App entry point
-```
+|                                                               |                                                               |                                                               |                                                               |
+| :-----------------------------------------------------------: | :-----------------------------------------------------------: | :-----------------------------------------------------------: | :-----------------------------------------------------------: |
+| <img src="assets/screenshots/Screenshot-1.png" width="260" /> | <img src="assets/screenshots/Screenshot-2.png" width="260" /> | <img src="assets/screenshots/Screenshot-3.png" width="260" /> | <img src="assets/screenshots/Screenshot-4.png" width="260" /> |
+| <img src="assets/screenshots/Screenshot-5.png" width="260" /> | <img src="assets/screenshots/Screenshot-6.png" width="260" /> | <img src="assets/screenshots/Screenshot-7.png" width="260" /> | <img src="assets/screenshots/Screenshot-8.png" width="260" /> |
 
 ## Getting Started
 
-### Prerequisites:
-- Flutter 3.9.2 or higher
-- Android SDK for Android development
-- Android device or emulator
+### Prerequisites
 
-### Installation:
+- Flutter (stable channel)
+- Dart SDK >= 3.9.2 (per `environment.sdk`)
+- Android SDK + device/emulator (Android 8.0+ recommended)
 
-1. **Clone the repository** (if applicable):
-   ```bash
-   git clone <repository-url>
-   cd florid
-   ```
+### Setup
 
-2. **Install dependencies**:
-   ```bash
-   flutter pub get
-   ```
+1. Install dependencies
 
-3. **Generate code** (for JSON serialization):
-   ```bash
-   dart run build_runner build
-   ```
+```bash
+flutter pub get
+```
 
-4. **Run the app**:
-   ```bash
-   flutter run
-   ```
+2. Run on a device
 
-### Building APK:
+```bash
+flutter run
+```
+
+First launch performs an initial repository sync and caches data locally for faster subsequent loads and limited offline use.
+
+### Build
+
+Build a release APK:
+
 ```bash
 flutter build apk --release
 ```
 
+Optionally, build an Android App Bundle:
+
+```bash
+flutter build appbundle --release
+```
+
+## Architecture
+
+- State management: Provider
+- Data layer: `FDroidApiService` (network + download) and `DatabaseService` (SQLite via `sqflite`) with cache‑first fallback
+- Serialization: `json_serializable` + `build_runner`
+- UI: Flutter Material 3 components and custom widgets
+- Notifications: `flutter_local_notifications` for download progress/completion
+
+### Repository & Caching
+
+- Fetches `index-v2.json` from F‑Droid, parses into models, persists to SQLite
+- Falls back to local DB or JSON cache when offline or on failures
+- Extracts screenshots from raw metadata when available
+
+### Project Structure
+
+```
+lib/
+├── models/          # Data models (FDroidApp, FDroidVersion, ...)
+├── providers/       # App, download, and settings providers
+├── screens/         # UI screens (Latest, Categories, Updates, Details, ...)
+├── services/        # API, database, notifications, utilities
+├── widgets/         # Reusable UI components
+└── main.dart        # App entry point
+```
+
 ## Permissions
 
-The app requires the following Android permissions:
+Florid uses the following Android permissions for core functionality:
 
-- **INTERNET**: For API calls to F-Droid repository
-- **READ_EXTERNAL_STORAGE**: For accessing downloaded files
-- **WRITE_EXTERNAL_STORAGE**: For downloading APK files
-- **REQUEST_INSTALL_PACKAGES**: For APK installation (future feature)
-- **QUERY_ALL_PACKAGES**: For checking installed apps
+- INTERNET: Access the F‑Droid repository and app metadata
+- REQUEST_INSTALL_PACKAGES: Install downloaded APKs
+- POST_NOTIFICATIONS (Android 13+): Show download notifications
+- QUERY_ALL_PACKAGES: Detect installed apps to surface available updates
+- Storage access: APK files are stored in the app’s external Downloads dir; on Android 13+ this typically works without the legacy storage permission
 
-## Dependencies
+Actual permissions are declared in the Android manifest and requested at runtime where required.
 
-Key packages used:
-- `provider`: State management
-- `http`: API calls
-- `dio`: File downloads
-- `cached_network_image`: Image caching
-- `device_apps`: Installed apps information
-- `permission_handler`: Android permissions
-- `url_launcher`: External URL handling
-- `share_plus`: App sharing functionality
-- `json_annotation`: JSON serialization
+## Development
+
+- Regenerate splash screen (configured in `splash_screen.yaml`):
+
+```bash
+flutter pub run flutter_native_splash:create
+```
+
+- Regenerate app icons (configured in `icon_launcher.yaml`):
+
+```bash
+flutter pub run icons_launcher:create
+```
+
+## Dependencies (selected)
+
+- provider, http, dio, cached_network_image, flutter_cache_manager
+- sqflite, path_provider, shared_preferences
+- permission_handler, package_info_plus, installed_apps, android_intent_plus
+- flutter_local_notifications, url_launcher, share_plus
+- json_annotation, json_serializable, build_runner
 
 ## Contributing
 
-This is a Flutter project that demonstrates building a complete F-Droid client. Feel free to:
-- Report bugs and issues
-- Suggest new features
-- Submit pull requests
-- Improve documentation
+Issues and PRs are welcome! Please:
+
+- Open an issue for bugs or feature requests
+- Keep PRs focused and include concise descriptions
+- Follow the existing code style and Provider architecture
 
 ## License
 
-This project is open source. Please check the LICENSE file for details.
+GPL‑3.0 — see LICENSE for full text.
 
-## Acknowledgments
+## Disclaimer
 
-- F-Droid project for providing the open-source app repository
-- Flutter team for the excellent framework
-- Material Design team for the design system
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Florid is an independent project and is not affiliated with or endorsed by F‑Droid. “F‑Droid” is a trademark of its respective owners.
