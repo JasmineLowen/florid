@@ -108,11 +108,11 @@ class FDroidApiService {
         // Parse repository
         final repo = FDroidRepository.fromJson(jsonData);
 
-        // Store in database and wait for completion to avoid database locks
+        // Store in database on a background isolate to avoid blocking UI
         try {
-          await _databaseService.importRepository(repo);
+          _importRepositoryInBackground(repo); // Fire and forget
         } catch (e) {
-          debugPrint('Error importing to database: $e');
+          debugPrint('Error scheduling database import: $e');
         }
 
         // Also save JSON cache for screenshot extraction
@@ -213,6 +213,23 @@ class FDroidApiService {
       debugPrint('Error fetching from custom repo $url: $e');
       throw Exception('Error fetching repository from $url: $e');
     }
+  }
+
+  /// Imports repository in background isolate to avoid UI blocking
+  Future<void> _importRepositoryInBackground(FDroidRepository repo) async {
+    try {
+      debugPrint('Scheduling database import on background isolate...');
+      await compute(_importRepositoryIsolate, repo);
+      debugPrint('Database import completed in background');
+    } catch (e) {
+      debugPrint('Error importing repository in background: $e');
+    }
+  }
+
+  /// Static function to run import in isolate
+  static Future<void> _importRepositoryIsolate(FDroidRepository repo) async {
+    final db = DatabaseService();
+    await db.importRepository(repo);
   }
 
   /// Clears the cached repository index from disk, memory, and database.

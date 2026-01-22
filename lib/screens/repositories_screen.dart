@@ -3,7 +3,9 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../models/repository.dart';
+import '../providers/app_provider.dart';
 import '../providers/repositories_provider.dart';
+import '../services/fdroid_api_service.dart';
 
 class RepositoriesScreen extends StatefulWidget {
   const RepositoriesScreen({super.key});
@@ -159,25 +161,49 @@ class _RepositoryListItem extends StatelessWidget {
                     ),
                 ],
               ),
-              trailing: PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    child: const Text('Enable/Disable'),
-                    onTap: () async {
-                      await provider.toggleRepository(repository.id);
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Switch(
+                    value: repository.isEnabled,
+                    onChanged: (_) async {
+                      await _toggleRepositoryWithDialog(
+                        context,
+                        provider,
+                        repository.id,
+                      );
                     },
                   ),
-                  PopupMenuItem(
-                    child: const Text('Edit'),
-                    onTap: () {
-                      _showEditRepositoryDialog(context, repository);
+                  PopupMenuButton<String>(
+                    onSelected: (value) async {
+                      switch (value) {
+                        case 'toggle':
+                          await _toggleRepositoryWithDialog(
+                            context,
+                            provider,
+                            repository.id,
+                          );
+                          break;
+                        case 'edit':
+                          _showEditRepositoryDialog(context, repository);
+                          break;
+                        case 'delete':
+                          _showDeleteConfirmation(
+                            context,
+                            repository,
+                            provider,
+                          );
+                          break;
+                      }
                     },
-                  ),
-                  PopupMenuItem(
-                    child: const Text('Delete'),
-                    onTap: () {
-                      _showDeleteConfirmation(context, repository, provider);
-                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'toggle',
+                        child: Text('Enable/Disable'),
+                      ),
+                      PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    ],
                   ),
                 ],
               ),
@@ -249,6 +275,65 @@ class _RepositoryListItem extends StatelessWidget {
       return '${date.day}/${date.month}/${date.year}';
     }
   }
+}
+
+Future<void> _toggleRepositoryWithDialog(
+  BuildContext context,
+  RepositoriesProvider provider,
+  int repositoryId,
+) async {
+  final apiService = context.read<FDroidApiService>();
+  final appProvider = context.read<AppProvider>();
+  final progress = ValueNotifier<double>(0.0);
+
+  // Show a blocking dialog and execute the toggle inside it so the dialog stays up.
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    useRootNavigator: true,
+    builder: (dialogContext) {
+      // // Kick off the async work after the dialog is built.
+      Future.microtask(() async {
+        try {
+          progress.value = 0.1;
+          await provider.toggleRepository(repositoryId);
+          progress.value = 0.4;
+          await apiService.clearRepositoryCache();
+          progress.value = 0.7;
+          await appProvider.refreshAll(repositoriesProvider: provider);
+          progress.value = 1.0;
+        } finally {
+          if (Navigator.of(dialogContext, rootNavigator: true).canPop()) {
+            Navigator.of(dialogContext, rootNavigator: true).pop();
+          }
+        }
+      });
+
+      return AlertDialog(
+        title: const Text('Updating Repository'),
+        icon: Icon(Symbols.sync, size: 32),
+        content: ValueListenableBuilder<double>(
+          valueListenable: progress,
+          builder: (_, value, __) {
+            final pct = (value * 100).clamp(0, 100).round();
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                LinearProgressIndicator(
+                  value: value == 0.0 ? null : value,
+                  year2023: false,
+                ),
+                const SizedBox(height: 8),
+                Text('$pct%'),
+              ],
+            );
+          },
+        ),
+      );
+    },
+  );
 }
 
 class _AddRepositoryDialog extends StatefulWidget {
