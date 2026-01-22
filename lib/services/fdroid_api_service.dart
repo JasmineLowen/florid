@@ -215,21 +215,60 @@ class FDroidApiService {
     }
   }
 
-  /// Imports repository in background isolate to avoid UI blocking
-  Future<void> _importRepositoryInBackground(FDroidRepository repo) async {
+  /// Imports repository asynchronously to avoid blocking UI
+  void _importRepositoryInBackground(
+    FDroidRepository repo, {
+    int? repositoryId,
+  }) {
     try {
-      debugPrint('Scheduling database import on background isolate...');
-      await compute(_importRepositoryIsolate, repo);
-      debugPrint('Database import completed in background');
+      debugPrint('Scheduling database import...');
+      // Defer import to run after the current frame without blocking UI
+      Future.microtask(() async {
+        try {
+          await _databaseService.importRepository(
+            repo,
+            repositoryId: repositoryId,
+          );
+          debugPrint('Database import completed in background');
+        } catch (e) {
+          debugPrint('Error importing repository in background: $e');
+        }
+      });
     } catch (e) {
-      debugPrint('Error importing repository in background: $e');
+      debugPrint('Error scheduling database import: $e');
     }
   }
 
-  /// Static function to run import in isolate
-  static Future<void> _importRepositoryIsolate(FDroidRepository repo) async {
-    final db = DatabaseService();
-    await db.importRepository(repo);
+  /// Gets repository ID by URL
+  Future<int?> getRepositoryIdByUrl(String url) async {
+    try {
+      final db = await _databaseService.database;
+      final results = await db.query(
+        'repositories',
+        where: 'url = ?',
+        whereArgs: [url],
+        columns: ['id'],
+      );
+      if (results.isNotEmpty) {
+        return results.first['id'] as int;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting repository ID: $e');
+      return null;
+    }
+  }
+
+  /// Imports a repository to the database
+  Future<void> importRepositoryToDatabase(
+    FDroidRepository repo, {
+    required int repositoryId,
+  }) async {
+    try {
+      await _databaseService.importRepository(repo, repositoryId: repositoryId);
+    } catch (e) {
+      debugPrint('Error importing repository to database: $e');
+    }
   }
 
   /// Clears the cached repository index from disk, memory, and database.
@@ -370,6 +409,32 @@ class FDroidApiService {
       }
     } catch (e) {
       throw Exception('Error searching apps: $e');
+    }
+  }
+
+  /// Searches for apps from a specific custom repository using database
+  Future<List<FDroidApp>> searchAppsFromRepositoryUrl(
+    String query,
+    String repositoryUrl,
+  ) async {
+    try {
+      // Try to search from database if repository data is cached there
+      final results = await _databaseService.searchAppsByRepository(
+        query,
+        repositoryUrl,
+      );
+      if (results.isNotEmpty) {
+        return results;
+      }
+
+      // Fallback: fetch from network if not in database
+      debugPrint(
+        'Repository $repositoryUrl not in database, fetching from network...',
+      );
+      final repo = await fetchRepositoryFromUrl(repositoryUrl);
+      return repo.searchApps(query);
+    } catch (e) {
+      throw Exception('Error searching apps from repository: $e');
     }
   }
 

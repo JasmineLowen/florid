@@ -105,6 +105,22 @@ class AppProvider extends ChangeNotifier {
         try {
           final repo = await _apiService.fetchRepositoryFromUrl(url);
           repositories.add(repo);
+
+          // Also import to database for future searches
+          // Get the repository ID from the repositories table by URL
+          try {
+            final repoId = await _apiService.getRepositoryIdByUrl(url);
+            if (repoId != null) {
+              await _apiService.importRepositoryToDatabase(
+                repo,
+                repositoryId: repoId,
+              );
+            }
+          } catch (e) {
+            debugPrint('Error importing custom repo to database: $e');
+            // Continue even if import fails
+          }
+
           debugPrint('Successfully fetched repository from $url');
         } catch (e) {
           debugPrint('Failed to fetch repository from $url: $e');
@@ -245,6 +261,12 @@ class AppProvider extends ChangeNotifier {
       return;
     }
 
+    // Prevent duplicate searches for the same query
+    if (_searchQuery == query && _searchState == LoadingState.loading) {
+      debugPrint('Search already in progress for: $query');
+      return;
+    }
+
     _searchQuery = query;
     _searchState = LoadingState.loading;
     _searchError = null;
@@ -253,21 +275,29 @@ class AppProvider extends ChangeNotifier {
     try {
       final combined = <String, FDroidApp>{};
 
-      // Search in custom repositories first, so their results win on dedupe
+      // Search in custom repositories from database
       if (repositoriesProvider != null) {
         if (repositoriesProvider.repositories.isEmpty &&
             !repositoriesProvider.isLoading) {
           await repositoriesProvider.loadRepositories();
         }
 
+        // For each enabled custom repo, search in database
         final customRepos = repositoriesProvider.enabledRepositories;
         if (customRepos.isNotEmpty) {
-          final customUrls = customRepos.map((r) => r.url).toList();
-          final mergedRepo = await fetchRepositoriesFromUrls(customUrls);
-          if (mergedRepo != null) {
-            final customResults = mergedRepo.searchApps(query);
-            for (final app in customResults) {
-              combined[app.packageName] = app;
+          // Search from database for custom repos (they should be imported there)
+          for (final customRepo in customRepos) {
+            try {
+              // Search in database - results should be there if repo was previously imported
+              final results = await _apiService.searchAppsFromRepositoryUrl(
+                query,
+                customRepo.url,
+              );
+              for (final app in results) {
+                combined[app.packageName] = app;
+              }
+            } catch (e) {
+              debugPrint('Error searching custom repo ${customRepo.name}: $e');
             }
           }
         }

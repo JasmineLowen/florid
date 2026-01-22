@@ -115,9 +115,18 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
     showDialog(
       context: context,
       builder: (context) => _AddRepositoryDialog(
-        onAdd: (name, url) {
-          context.read<RepositoriesProvider>().addRepository(name, url);
+        onAdd: (name, url) async {
+          // Close the add dialog, then run the add flow with a blocking progress dialog.
           Navigator.pop(context);
+          await _runRepositoryActionWithDialog(context, () async {
+            final repoProvider = context.read<RepositoriesProvider>();
+            final apiService = context.read<FDroidApiService>();
+            final appProvider = context.read<AppProvider>();
+
+            await repoProvider.addRepository(name, url);
+            await apiService.clearRepositoryCache();
+            await appProvider.refreshAll(repositoriesProvider: repoProvider);
+          });
         },
       ),
     );
@@ -318,15 +327,69 @@ Future<void> _toggleRepositoryWithDialog(
             final pct = (value * 100).clamp(0, 100).round();
             return Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
+                Text('Now is a great time to touch grass!'),
+                SizedBox(height: 16),
                 LinearProgressIndicator(
                   value: value == 0.0 ? null : value,
                   year2023: false,
                 ),
                 const SizedBox(height: 8),
-                Text('$pct%'),
+                Text('$pct%', textAlign: TextAlign.right),
+              ],
+            );
+          },
+        ),
+      );
+    },
+  );
+}
+
+Future<void> _runRepositoryActionWithDialog(
+  BuildContext context,
+  Future<void> Function() action,
+) async {
+  final progress = ValueNotifier<double>(0.0);
+
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    useRootNavigator: true,
+    builder: (dialogContext) {
+      Future.microtask(() async {
+        try {
+          progress.value = 0.2;
+          await action();
+          progress.value = 1.0;
+        } finally {
+          if (Navigator.of(dialogContext, rootNavigator: true).canPop()) {
+            Navigator.of(dialogContext, rootNavigator: true).pop();
+          }
+        }
+      });
+
+      return AlertDialog(
+        title: const Text('Updating Repository'),
+        icon: Icon(Symbols.sync, size: 32),
+        content: ValueListenableBuilder<double>(
+          valueListenable: progress,
+          builder: (_, value, __) {
+            final pct = (value * 100).clamp(0, 100).round();
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text('Now is a great time to touch grass!'),
+                SizedBox(height: 16),
+                LinearProgressIndicator(
+                  value: value == 0.0 ? null : value,
+                  year2023: false,
+                ),
+                const SizedBox(height: 8),
+                Text('$pct%', textAlign: TextAlign.right),
               ],
             );
           },

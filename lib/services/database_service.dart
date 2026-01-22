@@ -7,7 +7,7 @@ import '../models/fdroid_app.dart';
 
 class DatabaseService {
   static const String _databaseName = 'fdroid_repository.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   // Table names
   static const String _appsTable = 'apps';
@@ -66,6 +66,7 @@ class DatabaseService {
     await db.execute('''
       CREATE TABLE $_appsTable (
         package_name TEXT PRIMARY KEY,
+        repository_id INTEGER,
         name TEXT NOT NULL,
         summary TEXT NOT NULL,
         description TEXT NOT NULL,
@@ -157,6 +158,12 @@ class DatabaseService {
         )
       ''');
     }
+    if (oldVersion < 3) {
+      // Add repository_id column to apps table for v2 to v3 upgrade
+      await db.execute(
+        'ALTER TABLE $_appsTable ADD COLUMN repository_id INTEGER',
+      );
+    }
   }
 
   /// Sets the current locale for localized data extraction
@@ -216,20 +223,51 @@ class DatabaseService {
   }
 
   /// Imports repository data from FDroidRepository
-  Future<void> importRepository(FDroidRepository repository) async {
+  /// If repositoryId is null, clears all existing data (official F-Droid).
+  /// If repositoryId is provided, only updates apps from that repository.
+  Future<void> importRepository(
+    FDroidRepository repository, {
+    int? repositoryId,
+  }) async {
     final db = await database;
 
     await db.transaction((txn) async {
-      // Clear existing data
-      await txn.delete(_appCategoriesTable);
-      await txn.delete(_versionsTable);
-      await txn.delete(_appsTable);
-      await txn.delete(_categoriesTable);
+      // If no repository ID (official F-Droid), clear all data
+      if (repositoryId == null) {
+        await txn.delete(_appCategoriesTable);
+        await txn.delete(_versionsTable);
+        await txn.delete(_appsTable);
+        await txn.delete(_categoriesTable);
+      } else {
+        // For custom repos, only delete apps from this repository
+        await txn.delete(
+          _appCategoriesTable,
+          where:
+              '''
+          package_name IN (SELECT package_name FROM $_appsTable WHERE repository_id = ?)
+        ''',
+          whereArgs: [repositoryId],
+        );
+        await txn.delete(
+          _versionsTable,
+          where:
+              '''
+          package_name IN (SELECT package_name FROM $_appsTable WHERE repository_id = ?)
+        ''',
+          whereArgs: [repositoryId],
+        );
+        await txn.delete(
+          _appsTable,
+          where: 'repository_id = ?',
+          whereArgs: [repositoryId],
+        );
+      }
 
       // Insert apps
       for (final app in repository.apps.values) {
         await txn.insert(_appsTable, {
           'package_name': app.packageName,
+          'repository_id': repositoryId,
           'name': app.name,
           'summary': app.summary,
           'description': app.description,
@@ -249,7 +287,7 @@ class DatabaseService {
           'suggested_version_code': app.suggestedVersionCode,
           'added': app.added?.millisecondsSinceEpoch,
           'last_updated': app.lastUpdated?.millisecondsSinceEpoch,
-        });
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
 
         // Insert versions
         if (app.packages != null) {
@@ -276,7 +314,7 @@ class DatabaseService {
               'nativecode': version.nativecode != null
                   ? jsonEncode(version.nativecode)
                   : null,
-            });
+            }, conflictAlgorithm: ConflictAlgorithm.replace);
           }
         }
 
@@ -289,7 +327,7 @@ class DatabaseService {
             await txn.insert(_appCategoriesTable, {
               'package_name': app.packageName,
               'category': category,
-            });
+            }, conflictAlgorithm: ConflictAlgorithm.ignore);
           }
         }
       }
@@ -439,6 +477,92 @@ class DatabaseService {
       ORDER BY a.name ASC
     ''',
       [category],
+    );
+
+    if (appMaps.isEmpty) return [];
+
+    // Get package names from the result set
+    final packageNames = appMaps
+        .map((m) => m['package_name'] as String)
+        .toList();
+
+    // Batch load all categories and versions for these apps
+    final categoriesResults = await db.query(
+      _appCategoriesTable,
+      where:
+          'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      whereArgs: packageNames,
+    );
+
+    final versionsResults = await db.query(
+      _versionsTable,
+      where:
+          'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      whereArgs: packageNames,
+      orderBy: 'version_code DESC',
+    );
+
+    // Group by package name
+    final categoriesByPackage = <String, List<String>>{};
+    for (final catRow in categoriesResults) {
+      final pkg = catRow['package_name'] as String;
+      final cat = catRow['category'] as String;
+      categoriesByPackage.putIfAbsent(pkg, () => []).add(cat);
+    }
+
+    final versionsByPackage = <String, List<Map<String, dynamic>>>{};
+    for (final verRow in versionsResults) {
+      final pkg = verRow['package_name'] as String;
+      versionsByPackage.putIfAbsent(pkg, () => []).add(verRow);
+    }
+
+    final apps = <FDroidApp>[];
+    for (final appMap in appMaps) {
+      final packageName = appMap['package_name'] as String;
+      final app = _mapToAppWithData(
+        appMap,
+        categoriesByPackage[packageName] ?? [],
+        versionsByPackage[packageName] ?? [],
+      );
+      apps.add(app);
+    }
+
+    return apps;
+  }
+
+  /// Searches apps by repository URL
+  Future<List<FDroidApp>> searchAppsByRepository(
+    String query,
+    String repositoryUrl,
+  ) async {
+    final db = await database;
+
+    // Get repository ID by URL
+    final repoResults = await db.query(
+      _repositoriesTable,
+      where: 'url = ?',
+      whereArgs: [repositoryUrl],
+    );
+
+    if (repoResults.isEmpty) {
+      return []; // Repository not found in database
+    }
+
+    final repositoryId = repoResults.first['id'] as int;
+    final searchTerm = '%${query.toLowerCase()}%';
+
+    // Search apps from this specific repository
+    final appMaps = await db.rawQuery(
+      '''
+      SELECT * FROM $_appsTable
+      WHERE repository_id = ?
+        AND (LOWER(name) LIKE ? 
+         OR LOWER(summary) LIKE ? 
+         OR LOWER(description) LIKE ?
+         OR LOWER(package_name) LIKE ?)
+      ORDER BY name ASC
+    ''',
+      [repositoryId, searchTerm, searchTerm, searchTerm, searchTerm],
     );
 
     if (appMaps.isEmpty) return [];
