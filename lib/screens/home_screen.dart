@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
+import '../providers/repositories_provider.dart';
 import 'search_screen.dart';
 import 'settings_screen.dart';
 import 'updates_screen.dart';
@@ -28,10 +29,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Load installed apps once at startup so install status is available.
+    // Load installed apps and repositories once at startup
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appProvider = context.read<AppProvider>();
+      final repositoriesProvider = context.read<RepositoriesProvider>();
+
       appProvider.fetchInstalledApps();
+      repositoriesProvider.loadRepositories();
     });
   }
 
@@ -131,7 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
     Future.microtask(() async {
       try {
         final appProvider = context.read<AppProvider>();
-        await appProvider.refreshAll();
+        final repositoriesProvider = context.read<RepositoriesProvider>();
+        await appProvider.refreshAll(
+          repositoriesProvider: repositoriesProvider,
+        );
         if (!mounted) return;
         ScaffoldMessenger.of(
           context,

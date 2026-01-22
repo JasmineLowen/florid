@@ -4,6 +4,7 @@ import 'package:installed_apps/installed_apps.dart';
 
 import '../models/fdroid_app.dart';
 import '../services/fdroid_api_service.dart';
+import 'repositories_provider.dart';
 
 enum LoadingState { idle, loading, success, error }
 
@@ -90,14 +91,105 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  /// Fetches latest apps from F-Droid
-  Future<void> fetchLatestApps() async {
+  /// Fetches and merges repositories from multiple URLs
+  Future<FDroidRepository?> fetchRepositoriesFromUrls(List<String> urls) async {
+    if (urls.isEmpty) return null;
+
+    try {
+      debugPrint('Fetching from ${urls.length} repository URLs');
+
+      final repositories = <FDroidRepository>[];
+
+      // Fetch all repositories, handling errors per URL
+      for (final url in urls) {
+        try {
+          final repo = await _apiService.fetchRepositoryFromUrl(url);
+          repositories.add(repo);
+          debugPrint('Successfully fetched repository from $url');
+        } catch (e) {
+          debugPrint('Failed to fetch repository from $url: $e');
+          // Continue with other URLs if one fails
+        }
+      }
+
+      if (repositories.isEmpty) {
+        throw Exception('Failed to fetch from any repository');
+      }
+
+      // Merge all repositories into one
+      final mergedRepo = _mergeRepositories(repositories);
+      notifyListeners();
+      return mergedRepo;
+    } catch (e) {
+      debugPrint('Error fetching from multiple repositories: $e');
+      return null;
+    }
+  }
+
+  /// Merges multiple repositories into one
+  FDroidRepository _mergeRepositories(List<FDroidRepository> repos) {
+    final mergedApps = <String, FDroidApp>{};
+
+    // Merge all apps from all repositories
+    for (final repo in repos) {
+      mergedApps.addAll(repo.apps);
+    }
+
+    // Use the first repo's metadata
+    return FDroidRepository(
+      name: 'Merged Repositories',
+      description: 'Merged from ${repos.length} repositories',
+      icon: repos.first.icon,
+      timestamp: repos.first.timestamp,
+      version: repos.first.version,
+      maxage: repos.first.maxage,
+      apps: mergedApps,
+    );
+  }
+
+  /// Fetches latest apps from F-Droid and custom repositories
+  Future<void> fetchLatestApps({
+    RepositoriesProvider? repositoriesProvider,
+    int limit = 50,
+  }) async {
     _latestAppsState = LoadingState.loading;
     _latestAppsError = null;
     notifyListeners();
 
     try {
-      _latestApps = await _apiService.fetchLatestApps();
+      List<FDroidApp> apps = [];
+
+      // Try to fetch from custom repositories if available
+      if (repositoriesProvider != null) {
+        // Ensure repositories are loaded before checking enabled ones
+        if (repositoriesProvider.repositories.isEmpty &&
+            !repositoriesProvider.isLoading) {
+          await repositoriesProvider.loadRepositories();
+        }
+
+        final customRepos = repositoriesProvider.enabledRepositories;
+        if (customRepos.isNotEmpty) {
+          final customUrls = customRepos.map((r) => r.url).toList();
+          final mergedRepo = await fetchRepositoriesFromUrls(customUrls);
+          if (mergedRepo != null) {
+            // Get latest apps from merged repository
+            final latestApps = mergedRepo.apps.values.toList();
+            latestApps.sort((a, b) {
+              final aAdded = a.added?.millisecondsSinceEpoch ?? 0;
+              final bAdded = b.added?.millisecondsSinceEpoch ?? 0;
+              return bAdded.compareTo(aAdded); // Latest first
+            });
+            apps = latestApps.take(limit).toList();
+            _latestApps = apps;
+            _latestAppsState = LoadingState.success;
+            notifyListeners();
+            return;
+          }
+        }
+      }
+
+      // Fall back to official F-Droid
+      _latestApps = await _apiService.fetchLatestApps(limit: limit);
       _latestAppsState = LoadingState.success;
     } catch (e) {
       _latestAppsError = e.toString();
@@ -142,7 +234,10 @@ class AppProvider extends ChangeNotifier {
   }
 
   /// Searches for apps
-  Future<void> searchApps(String query) async {
+  Future<void> searchApps(
+    String query, {
+    RepositoriesProvider? repositoriesProvider,
+  }) async {
     if (query.trim().isEmpty) {
       _searchResults = [];
       _searchQuery = '';
@@ -156,7 +251,37 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _searchResults = await _apiService.searchApps(query);
+      final combined = <String, FDroidApp>{};
+
+      // Search in custom repositories first, so their results win on dedupe
+      if (repositoriesProvider != null) {
+        if (repositoriesProvider.repositories.isEmpty &&
+            !repositoriesProvider.isLoading) {
+          await repositoriesProvider.loadRepositories();
+        }
+
+        final customRepos = repositoriesProvider.enabledRepositories;
+        if (customRepos.isNotEmpty) {
+          final customUrls = customRepos.map((r) => r.url).toList();
+          final mergedRepo = await fetchRepositoriesFromUrls(customUrls);
+          if (mergedRepo != null) {
+            final customResults = mergedRepo.searchApps(query);
+            for (final app in customResults) {
+              combined[app.packageName] = app;
+            }
+          }
+        }
+      }
+
+      // Official F-Droid search as fallback/merge
+      final officialResults = await _apiService.searchApps(query);
+      for (final app in officialResults) {
+        combined.putIfAbsent(app.packageName, () => app);
+      }
+
+      // Sort results alphabetically for stability
+      _searchResults = combined.values.toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       _searchState = LoadingState.success;
     } catch (e) {
       _searchError = e.toString();
@@ -260,7 +385,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   /// Refreshes all data
-  Future<void> refreshAll() async {
+  Future<void> refreshAll({RepositoriesProvider? repositoriesProvider}) async {
     // Clear cached data
     _repository = null;
     _categoryApps.clear();
@@ -268,7 +393,7 @@ class AppProvider extends ChangeNotifier {
     // Reload data
     await Future.wait([
       fetchRepository(),
-      fetchLatestApps(),
+      fetchLatestApps(repositoriesProvider: repositoriesProvider),
       fetchCategories(),
       fetchInstalledApps(),
     ]);

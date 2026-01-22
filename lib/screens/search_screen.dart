@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
+import '../providers/repositories_provider.dart';
 import '../widgets/app_list_item.dart';
 import 'app_details_screen.dart';
 
@@ -60,7 +61,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _performSearch(String query) {
     final appProvider = context.read<AppProvider>();
-    appProvider.searchApps(query);
+    final repositoriesProvider = context.read<RepositoriesProvider>();
+    appProvider.searchApps(query, repositoriesProvider: repositoriesProvider);
   }
 
   void _clearSearch() {

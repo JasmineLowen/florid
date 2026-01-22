@@ -7,7 +7,7 @@ import '../models/fdroid_app.dart';
 
 class DatabaseService {
   static const String _databaseName = 'fdroid_repository.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   // Table names
   static const String _appsTable = 'apps';
@@ -15,6 +15,7 @@ class DatabaseService {
   static const String _categoriesTable = 'categories';
   static const String _appCategoriesTable = 'app_categories';
   static const String _metadataTable = 'metadata';
+  static const String _repositoriesTable = 'repositories';
 
   Database? _database;
   String? _currentLocale;
@@ -48,6 +49,17 @@ class DatabaseService {
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,
         updated_at INTEGER NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $_repositoriesTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL UNIQUE,
+        is_enabled INTEGER NOT NULL DEFAULT 1,
+        added_at INTEGER,
+        last_synced_at INTEGER
       )
     ''');
 
@@ -116,12 +128,8 @@ class DatabaseService {
     ''');
 
     // Create indices for better query performance
-    await db.execute(
-      'CREATE INDEX idx_apps_name ON $_appsTable (name)',
-    );
-    await db.execute(
-      'CREATE INDEX idx_apps_added ON $_appsTable (added)',
-    );
+    await db.execute('CREATE INDEX idx_apps_name ON $_appsTable (name)');
+    await db.execute('CREATE INDEX idx_apps_added ON $_appsTable (added)');
     await db.execute(
       'CREATE INDEX idx_apps_last_updated ON $_appsTable (last_updated)',
     );
@@ -136,6 +144,19 @@ class DatabaseService {
   /// Handles database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // Handle future schema migrations here
+    if (oldVersion < 2) {
+      // Create repositories table if upgrading from v1 to v2
+      await db.execute('''
+        CREATE TABLE $_repositoriesTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          url TEXT NOT NULL UNIQUE,
+          is_enabled INTEGER NOT NULL DEFAULT 1,
+          added_at INTEGER,
+          last_synced_at INTEGER
+        )
+      ''');
+    }
   }
 
   /// Sets the current locale for localized data extraction
@@ -152,15 +173,11 @@ class DatabaseService {
   /// Stores repository metadata
   Future<void> setMetadata(String key, String value) async {
     final db = await database;
-    await db.insert(
-      _metadataTable,
-      {
-        'key': key,
-        'value': value,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert(_metadataTable, {
+      'key': key,
+      'value': value,
+      'updated_at': DateTime.now().millisecondsSinceEpoch,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   /// Gets repository metadata
@@ -266,11 +283,9 @@ class DatabaseService {
         // Insert categories
         if (app.categories != null) {
           for (final category in app.categories!) {
-            await txn.insert(
-              _categoriesTable,
-              {'category': category},
-              conflictAlgorithm: ConflictAlgorithm.ignore,
-            );
+            await txn.insert(_categoriesTable, {
+              'category': category,
+            }, conflictAlgorithm: ConflictAlgorithm.ignore);
             await txn.insert(_appCategoriesTable, {
               'package_name': app.packageName,
               'category': category,
@@ -280,35 +295,23 @@ class DatabaseService {
       }
 
       // Store sync timestamp
-      await txn.insert(
-        _metadataTable,
-        {
-          'key': 'last_sync',
-          'value': DateTime.now().millisecondsSinceEpoch.toString(),
-          'updated_at': DateTime.now().millisecondsSinceEpoch,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await txn.insert(_metadataTable, {
+        'key': 'last_sync',
+        'value': DateTime.now().millisecondsSinceEpoch.toString(),
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
 
       // Store repository metadata
-      await txn.insert(
-        _metadataTable,
-        {
-          'key': 'repo_name',
-          'value': repository.name,
-          'updated_at': DateTime.now().millisecondsSinceEpoch,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-      await txn.insert(
-        _metadataTable,
-        {
-          'key': 'repo_description',
-          'value': repository.description,
-          'updated_at': DateTime.now().millisecondsSinceEpoch,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await txn.insert(_metadataTable, {
+        'key': 'repo_name',
+        'value': repository.name,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      await txn.insert(_metadataTable, {
+        'key': 'repo_description',
+        'value': repository.description,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     });
   }
 
@@ -322,7 +325,10 @@ class DatabaseService {
 
     // Batch load all categories and versions for all apps at once
     final allCategories = await db.query(_appCategoriesTable);
-    final allVersions = await db.query(_versionsTable, orderBy: 'version_code DESC');
+    final allVersions = await db.query(
+      _versionsTable,
+      orderBy: 'version_code DESC',
+    );
 
     // Group by package name for efficient lookup
     final categoriesByPackage = <String, List<String>>{};
@@ -364,20 +370,24 @@ class DatabaseService {
     );
 
     // Get package names from the limited result set
-    final packageNames = appMaps.map((m) => m['package_name'] as String).toList();
-    
+    final packageNames = appMaps
+        .map((m) => m['package_name'] as String)
+        .toList();
+
     if (packageNames.isEmpty) return [];
 
     // Batch load categories and versions for these specific apps
     final categoriesResults = await db.query(
       _appCategoriesTable,
-      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      where:
+          'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
     );
 
     final versionsResults = await db.query(
       _versionsTable,
-      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      where:
+          'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
       orderBy: 'version_code DESC',
     );
@@ -413,10 +423,7 @@ class DatabaseService {
   /// Gets all categories
   Future<List<String>> getCategories() async {
     final db = await database;
-    final results = await db.query(
-      _categoriesTable,
-      orderBy: 'category ASC',
-    );
+    final results = await db.query(_categoriesTable, orderBy: 'category ASC');
 
     return results.map((row) => row['category'] as String).toList();
   }
@@ -424,28 +431,35 @@ class DatabaseService {
   /// Gets apps by category
   Future<List<FDroidApp>> getAppsByCategory(String category) async {
     final db = await database;
-    final appMaps = await db.rawQuery('''
+    final appMaps = await db.rawQuery(
+      '''
       SELECT a.* FROM $_appsTable a
       INNER JOIN $_appCategoriesTable ac ON a.package_name = ac.package_name
       WHERE ac.category = ?
       ORDER BY a.name ASC
-    ''', [category]);
+    ''',
+      [category],
+    );
 
     if (appMaps.isEmpty) return [];
 
     // Get package names from the result set
-    final packageNames = appMaps.map((m) => m['package_name'] as String).toList();
+    final packageNames = appMaps
+        .map((m) => m['package_name'] as String)
+        .toList();
 
     // Batch load all categories and versions for these apps
     final categoriesResults = await db.query(
       _appCategoriesTable,
-      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      where:
+          'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
     );
 
     final versionsResults = await db.query(
       _versionsTable,
-      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      where:
+          'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
       orderBy: 'version_code DESC',
     );
@@ -482,30 +496,37 @@ class DatabaseService {
   Future<List<FDroidApp>> searchApps(String query) async {
     final db = await database;
     final searchTerm = '%${query.toLowerCase()}%';
-    final appMaps = await db.rawQuery('''
+    final appMaps = await db.rawQuery(
+      '''
       SELECT * FROM $_appsTable
       WHERE LOWER(name) LIKE ? 
          OR LOWER(summary) LIKE ? 
          OR LOWER(description) LIKE ?
          OR LOWER(package_name) LIKE ?
       ORDER BY name ASC
-    ''', [searchTerm, searchTerm, searchTerm, searchTerm]);
+    ''',
+      [searchTerm, searchTerm, searchTerm, searchTerm],
+    );
 
     if (appMaps.isEmpty) return [];
 
     // Get package names from the result set
-    final packageNames = appMaps.map((m) => m['package_name'] as String).toList();
+    final packageNames = appMaps
+        .map((m) => m['package_name'] as String)
+        .toList();
 
     // Batch load all categories and versions for these apps
     final categoriesResults = await db.query(
       _appCategoriesTable,
-      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      where:
+          'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
     );
 
     final versionsResults = await db.query(
       _versionsTable,
-      where: 'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
+      where:
+          'package_name IN (${List.filled(packageNames.length, '?').join(',')})',
       whereArgs: packageNames,
       orderBy: 'version_code DESC',
     );
@@ -567,9 +588,7 @@ class DatabaseService {
         minSdkVersion: versionMap['min_sdk_version'] as String?,
         targetSdkVersion: versionMap['target_sdk_version'] as String?,
         maxSdkVersion: versionMap['max_sdk_version'] as String?,
-        added: DateTime.fromMillisecondsSinceEpoch(
-          versionMap['added'] as int,
-        ),
+        added: DateTime.fromMillisecondsSinceEpoch(versionMap['added'] as int),
         apkName: versionMap['apk_name'] as String,
         hash: versionMap['hash'] as String,
         hashType: versionMap['hash_type'] as String,
@@ -663,5 +682,71 @@ class DatabaseService {
       await txn.delete(_categoriesTable);
       await txn.delete(_metadataTable);
     });
+  }
+
+  // Repository management methods
+
+  /// Adds a new repository
+  Future<int> addRepository(String name, String url) async {
+    final db = await database;
+    return await db.insert(_repositoriesTable, {
+      'name': name,
+      'url': url,
+      'is_enabled': 1,
+      'added_at': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  /// Gets all repositories
+  Future<List<Map<String, dynamic>>> getAllRepositories() async {
+    final db = await database;
+    return await db.query(_repositoriesTable, orderBy: 'added_at DESC');
+  }
+
+  /// Updates a repository
+  Future<int> updateRepository(
+    int id,
+    String name,
+    String url,
+    bool isEnabled,
+  ) async {
+    final db = await database;
+    return await db.update(
+      _repositoriesTable,
+      {'name': name, 'url': url, 'is_enabled': isEnabled ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Deletes a repository
+  Future<int> deleteRepository(int id) async {
+    final db = await database;
+    return await db.delete(
+      _repositoriesTable,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Updates the last synced timestamp for a repository
+  Future<int> updateRepositoryLastSynced(int id) async {
+    final db = await database;
+    return await db.update(
+      _repositoriesTable,
+      {'last_synced_at': DateTime.now().millisecondsSinceEpoch},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Gets enabled repositories
+  Future<List<Map<String, dynamic>>> getEnabledRepositories() async {
+    final db = await database;
+    return await db.query(
+      _repositoriesTable,
+      where: 'is_enabled = 1',
+      orderBy: 'added_at DESC',
+    );
   }
 }

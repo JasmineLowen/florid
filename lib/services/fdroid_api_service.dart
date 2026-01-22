@@ -180,6 +180,41 @@ class FDroidApiService {
     );
   }
 
+  /// Fetches repository from a custom URL
+  Future<FDroidRepository> fetchRepositoryFromUrl(String url) async {
+    try {
+      // Ensure URL ends with /repo/index-v2.json
+      String indexUrl = url.endsWith('/') ? url : '$url/';
+      if (!indexUrl.endsWith('repo/index-v2.json')) {
+        indexUrl = '${indexUrl}repo/index-v2.json';
+      }
+
+      // Derive repository base (strip the index file and trailing slash)
+      var repoBase = indexUrl.replaceFirst(RegExp(r'index-v2\.json$'), '');
+      if (repoBase.endsWith('/')) {
+        repoBase = repoBase.substring(0, repoBase.length - 1);
+      }
+
+      debugPrint('Fetching from custom repo: $indexUrl');
+      final response = await _client.get(Uri.parse(indexUrl));
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final repo = FDroidRepository.fromJson(
+          jsonData,
+          repositoryUrl: repoBase,
+        );
+        debugPrint('Successfully fetched repository from $url');
+        return repo;
+      } else {
+        throw Exception('Failed to load repository: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching from custom repo $url: $e');
+      throw Exception('Error fetching repository from $url: $e');
+    }
+  }
+
   /// Clears the cached repository index from disk, memory, and database.
   Future<void> clearRepositoryCache() async {
     try {

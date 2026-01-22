@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 
 import 'providers/app_provider.dart';
 import 'providers/download_provider.dart';
+import 'providers/repositories_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/home_screen.dart';
+import 'services/database_service.dart';
 import 'services/fdroid_api_service.dart';
 import 'services/notification_service.dart';
 
@@ -27,6 +29,9 @@ class FloridApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<SettingsProvider>(
           create: (_) => SettingsProvider(),
+        ),
+        ChangeNotifierProvider<RepositoriesProvider>(
+          create: (_) => RepositoriesProvider(DatabaseService()),
         ),
         ProxyProvider<SettingsProvider, FDroidApiService>(
           update: (context, settings, previous) {

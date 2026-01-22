@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
+import '../providers/repositories_provider.dart';
 import '../widgets/app_list_item.dart';
 import 'app_details_screen.dart';
 
@@ -28,12 +29,16 @@ class _LatestScreenState extends State<LatestScreen>
 
   void _loadData() {
     final appProvider = context.read<AppProvider>();
-    appProvider.fetchLatestApps();
+    final repositoriesProvider = context.read<RepositoriesProvider>();
+    appProvider.fetchLatestApps(repositoriesProvider: repositoriesProvider);
   }
 
   Future<void> _onRefresh() async {
     final appProvider = context.read<AppProvider>();
-    await appProvider.fetchLatestApps();
+    final repositoriesProvider = context.read<RepositoriesProvider>();
+    await appProvider.fetchLatestApps(
+      repositoriesProvider: repositoriesProvider,
+    );
   }
 
   @override
@@ -51,7 +56,7 @@ class _LatestScreenState extends State<LatestScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(year2023: false,),
+                CircularProgressIndicator(year2023: false),
                 SizedBox(height: 16),
                 Text('Loading latest apps...'),
               ],

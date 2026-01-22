@@ -26,6 +26,8 @@ class FDroidApp {
   final int? suggestedVersionCode;
   final DateTime? added;
   final DateTime? lastUpdated;
+  @JsonKey(ignore: true)
+  final String repositoryUrl;
 
   const FDroidApp({
     required this.packageName,
@@ -50,6 +52,7 @@ class FDroidApp {
     this.suggestedVersionCode,
     this.added,
     this.lastUpdated,
+    this.repositoryUrl = 'https://f-droid.org/repo',
   });
 
   factory FDroidApp.fromJson(Map<String, dynamic> json) =>
@@ -58,8 +61,8 @@ class FDroidApp {
   Map<String, dynamic> toJson() => _$FDroidAppToJson(this);
 
   String get iconUrl => icon != null
-      ? 'https://f-droid.org/repo/icons-640/$icon'
-      : 'https://f-droid.org/repo/icons-640/default.png';
+      ? '$repositoryUrl/icons-640/$icon'
+      : '$repositoryUrl/icons-640/default.png';
 
   /// Returns multiple candidate icon URLs with improved F-Droid compatibility.
   /// F-Droid icons are often stored with specific naming patterns.
@@ -73,9 +76,9 @@ class FDroidApp {
       urls.add(url);
     }
 
-    String build(String bucket, String path) =>
-        'https://f-droid.org/repo/$bucket/$path';
-    String direct(String path) => 'https://f-droid.org/repo/$path';
+    String direct(String path) => '$repositoryUrl/$path';
+    String buildFromRepo(String bucket, String path) =>
+        '$repositoryUrl/$bucket/$path';
 
     if (icon != null && icon!.isNotEmpty) {
       final iconPath = icon!;
@@ -93,7 +96,7 @@ class FDroidApp {
         'icons-160',
         'icons',
       ]) {
-        add(build(bucket, iconPath));
+        add(buildFromRepo(bucket, iconPath));
       }
 
       // Flattened filename (strip directories).
@@ -103,7 +106,7 @@ class FDroidApp {
         'icons-160',
         'icons',
       ]) {
-        add(build(bucket, fileName));
+        add(buildFromRepo(bucket, fileName));
       }
 
       // Package directory + filename (common F-Droid layout: package/file.png).
@@ -113,7 +116,7 @@ class FDroidApp {
         'icons-160',
         'icons',
       ]) {
-        add(build(bucket, '$packageDir/$fileName'));
+        add(buildFromRepo(bucket, '$packageDir/$fileName'));
       }
 
       // Direct package dir + filename (mirrors actual hosting seen in sample index).
@@ -128,7 +131,7 @@ class FDroidApp {
         'icons-160',
         'icons',
       ]) {
-        add(build(bucket, '$packageName.png'));
+        add(buildFromRepo(bucket, '$packageName.png'));
       }
     }
 
@@ -145,6 +148,58 @@ class FDroidApp {
     final versions = packages!.values.toList();
     versions.sort((a, b) => b.versionCode.compareTo(a.versionCode));
     return versions.first;
+  }
+
+  FDroidApp copyWith({
+    String? packageName,
+    String? name,
+    String? summary,
+    String? description,
+    String? icon,
+    String? authorName,
+    String? authorEmail,
+    String? authorWebSite,
+    String? webSite,
+    String? issueTracker,
+    String? sourceCode,
+    String? changelog,
+    String? donate,
+    String? bitcoin,
+    String? flattrID,
+    String? license,
+    List<String>? categories,
+    Map<String, FDroidVersion>? packages,
+    String? suggestedVersionName,
+    int? suggestedVersionCode,
+    DateTime? added,
+    DateTime? lastUpdated,
+    String? repositoryUrl,
+  }) {
+    return FDroidApp(
+      packageName: packageName ?? this.packageName,
+      name: name ?? this.name,
+      summary: summary ?? this.summary,
+      description: description ?? this.description,
+      icon: icon ?? this.icon,
+      authorName: authorName ?? this.authorName,
+      authorEmail: authorEmail ?? this.authorEmail,
+      authorWebSite: authorWebSite ?? this.authorWebSite,
+      webSite: webSite ?? this.webSite,
+      issueTracker: issueTracker ?? this.issueTracker,
+      sourceCode: sourceCode ?? this.sourceCode,
+      changelog: changelog ?? this.changelog,
+      donate: donate ?? this.donate,
+      bitcoin: bitcoin ?? this.bitcoin,
+      flattrID: flattrID ?? this.flattrID,
+      license: license ?? this.license,
+      categories: categories ?? this.categories,
+      packages: packages ?? this.packages,
+      suggestedVersionName: suggestedVersionName ?? this.suggestedVersionName,
+      suggestedVersionCode: suggestedVersionCode ?? this.suggestedVersionCode,
+      added: added ?? this.added,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      repositoryUrl: repositoryUrl ?? this.repositoryUrl,
+    );
   }
 }
 
@@ -203,7 +258,6 @@ class FDroidCategory {
   final String name;
   final String description;
   final int appCount;
-
   const FDroidCategory({
     required this.id,
     required this.name,
@@ -248,12 +302,18 @@ class FDroidRepository {
   ///       ...
   ///   }
   /// }
-  factory FDroidRepository.fromJson(Map<String, dynamic> json) {
+  factory FDroidRepository.fromJson(
+    Map<String, dynamic> json, {
+    String? repositoryUrl,
+  }) {
     final repoMeta =
         (json['repo'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
     final packages =
         (json['packages'] as Map?)?.cast<String, dynamic>() ??
         <String, dynamic>{};
+
+    // Use provided URL or default to official F-Droid
+    final baseUrl = repositoryUrl ?? 'https://f-droid.org/repo';
 
     DateTime parseEpochOrIso(dynamic v) {
       if (v == null) return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
@@ -345,8 +405,9 @@ class FDroidRepository {
             final rawSize = versionData['size'] ?? fileMap?['size'];
             if (rawSize is int) {
               size = rawSize;
-            } else if (rawSize is String)
+            } else if (rawSize is String) {
               size = int.tryParse(rawSize) ?? 0;
+            }
 
             final added = parseEpochOrIso(
               versionData['timestamp'] ?? versionData['added'],
@@ -526,6 +587,7 @@ class FDroidRepository {
                 ),
           added: added,
           lastUpdated: lastUpdated,
+          repositoryUrl: baseUrl,
         );
 
         apps[pkgName] = app;
