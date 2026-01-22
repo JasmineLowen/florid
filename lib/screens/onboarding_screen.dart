@@ -7,7 +7,7 @@ import '../providers/app_provider.dart';
 import '../providers/repositories_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/fdroid_api_service.dart';
-import 'home_screen.dart';
+import 'florid_app.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -161,7 +161,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (!mounted) return;
       Navigator.of(
         context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const FloridApp()));
     } catch (e) {
       if (!mounted) return;
       setState(() {

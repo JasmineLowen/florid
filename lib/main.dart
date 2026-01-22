@@ -1,4 +1,5 @@
 import 'package:florid/constants.dart';
+import 'package:florid/screens/florid_app.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,7 +7,6 @@ import 'providers/app_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/repositories_provider.dart';
 import 'providers/settings_provider.dart';
-import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/database_service.dart';
 import 'services/fdroid_api_service.dart';
@@ -18,11 +18,11 @@ void main() async {
   // Initialize notification service and request permission
   await NotificationService().init();
 
-  runApp(const FloridApp());
+  runApp(const MainApp());
 }
 
-class FloridApp extends StatelessWidget {
-  const FloridApp({super.key});
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +102,7 @@ class FloridApp extends StatelessWidget {
                     body: Center(child: CircularProgressIndicator()),
                   )
                 : settings.onboardingComplete
-                ? const HomeScreen()
+                ? const FloridApp()
                 : const OnboardingScreen(),
           );
         },
