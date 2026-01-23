@@ -230,174 +230,181 @@ class _UpdatesScreenState extends State<UpdatesScreen>
       );
     }
 
-    return Column(
-      children: [
-        // Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.primaryContainer.withValues(alpha: 0.5),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Symbols.system_update,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  '${updatableApps.length} updates available',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
+    return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _updateAllApps(context, updatableApps),
+        icon: const Icon(Symbols.system_update),
+        label: const Text('Update All'),
+      ).animate().scale(duration: 300.ms, curve: Curves.easeOutBack),
+      body: Column(
+        children: [
+          // Header
+          Container(
+            margin: EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Material(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(99),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Icon(Symbols.system_update),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${updatableApps.length} updates available',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              FilledButton(
-                onPressed: () => _updateAllApps(context, updatableApps),
-                child: const Text('Update All'),
-              ),
-            ],
+            ),
           ),
-        ),
 
-        // Apps list
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            itemCount: updatableApps.length,
-            itemBuilder: (context, index) {
-              final app = updatableApps[index];
-              final installedApp = appProvider.getInstalledApp(app.packageName);
+          // Apps list
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              itemCount: updatableApps.length,
+              itemBuilder: (context, index) {
+                final app = updatableApps[index];
+                final installedApp = appProvider.getInstalledApp(
+                  app.packageName,
+                );
 
-              return Card(
-                elevation: 0,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            AppListItem(
-                              app: app,
-                              showInstallStatus: false,
-                              onTap: () async {
-                                final screenshots = await context
-                                    .read<AppProvider>()
-                                    .getScreenshots(app.packageName);
-                                if (!context.mounted) return;
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => AppDetailsScreen(
-                                      app: app,
-                                      screenshots: screenshots.isNotEmpty
-                                          ? screenshots
-                                          : null,
+                return Card(
+                  elevation: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              AppListItem(
+                                app: app,
+                                showInstallStatus: false,
+                                onTap: () async {
+                                  final screenshots = await context
+                                      .read<AppProvider>()
+                                      .getScreenshots(app.packageName);
+                                  if (!context.mounted) return;
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => AppDetailsScreen(
+                                        app: app,
+                                        screenshots: screenshots.isNotEmpty
+                                            ? screenshots
+                                            : null,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                            if (installedApp != null)
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  0,
-                                  16,
-                                  12,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      'Update from ${installedApp.versionName ?? 'Unknown'}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium
-                                          ?.copyWith(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                          ),
-                                    ),
-                                    Icon(
-                                      Symbols.arrow_right_alt,
-                                      size: 16,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                    Text(
-                                      app.latestVersion?.versionName ??
-                                          'Unknown',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium
-                                          ?.copyWith(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                          ),
-                                    ),
-                                  ],
-                                ),
+                                  );
+                                },
                               ),
-                          ],
+                              if (installedApp != null)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    12,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        'Update from ${installedApp.versionName ?? 'Unknown'}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelMedium
+                                            ?.copyWith(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                            ),
+                                      ),
+                                      Icon(
+                                        Symbols.arrow_right_alt,
+                                        size: 16,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                      Text(
+                                        app.latestVersion?.versionName ??
+                                            'Unknown',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelMedium
+                                            ?.copyWith(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Consumer<DownloadProvider>(
-                        builder: (context, downloadProvider, _) {
-                          final downloadInfo = downloadProvider.getDownloadInfo(
-                            app.packageName,
-                            app.latestVersion?.versionName ?? '',
-                          );
-                          final isDownloading =
-                              downloadInfo?.status ==
-                              DownloadStatus.downloading;
+                        Consumer<DownloadProvider>(
+                          builder: (context, downloadProvider, _) {
+                            final downloadInfo = downloadProvider
+                                .getDownloadInfo(
+                                  app.packageName,
+                                  app.latestVersion?.versionName ?? '',
+                                );
+                            final isDownloading =
+                                downloadInfo?.status ==
+                                DownloadStatus.downloading;
 
-                          if (isDownloading) {
-                            final progress = downloadProvider.getProgress(
-                              app.packageName,
-                              app.latestVersion?.versionName ?? '',
-                            );
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircularProgressIndicator(
-                                  value: progress,
-                                  year2023: false,
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    downloadProvider.cancelDownload(
-                                      app.packageName,
-                                      app.latestVersion?.versionName ?? '',
-                                    );
-                                  },
-                                  icon: Icon(Symbols.close),
-                                ),
-                              ],
-                            );
-                          }
+                            if (isDownloading) {
+                              final progress = downloadProvider.getProgress(
+                                app.packageName,
+                                app.latestVersion?.versionName ?? '',
+                              );
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(
+                                    value: progress,
+                                    year2023: false,
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      downloadProvider.cancelDownload(
+                                        app.packageName,
+                                        app.latestVersion?.versionName ?? '',
+                                      );
+                                    },
+                                    icon: Icon(Symbols.close),
+                                  ),
+                                ],
+                              );
+                            }
 
-                          return OutlinedButton(
-                            onPressed: () => _updateApp(context, app),
-                            child: const Text('Update'),
-                          );
-                        },
-                      ),
-                    ],
+                            return OutlinedButton(
+                              onPressed: () => _updateApp(context, app),
+                              child: const Text('Update'),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ).animate().fadeIn(duration: 300.ms, delay: (100 * index).ms);
-            },
+                ).animate().fadeIn(duration: 300.ms, delay: (100 * index).ms);
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
