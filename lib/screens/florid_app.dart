@@ -47,17 +47,17 @@ class _FloridAppState extends State<FloridApp> {
   final List<NavigationDestination> _destinations = const [
     NavigationDestination(
       icon: Icon(Symbols.newsstand_rounded),
-      selectedIcon: Icon(Symbols.newsstand_rounded, fill: 1),
+      selectedIcon: Icon(Symbols.newsstand_rounded, fill: 1, weight: 600),
       label: 'Library',
     ),
     NavigationDestination(
       icon: Icon(Symbols.search),
-      selectedIcon: Icon(Symbols.search, fill: 1),
+      selectedIcon: Icon(Symbols.search, fill: 1, weight: 600),
       label: 'Search',
     ),
     NavigationDestination(
-      icon: Icon(Symbols.mobile_3),
-      selectedIcon: Icon(Symbols.mobile_3, fill: 1),
+      icon: Icon(Symbols.mobile_3_rounded),
+      selectedIcon: Icon(Symbols.mobile_3_rounded, fill: 1, weight: 600),
       label: 'Device',
     ),
   ];
@@ -76,11 +76,11 @@ class _FloridAppState extends State<FloridApp> {
             destinations[2] = NavigationDestination(
               icon: Badge.count(
                 count: updatableAppsCount,
-                child: Icon(Symbols.mobile_3),
+                child: Icon(Symbols.mobile_3_rounded),
               ),
               selectedIcon: Badge.count(
                 count: updatableAppsCount,
-                child: Icon(Symbols.mobile_3, fill: 1),
+                child: Icon(Symbols.mobile_3_rounded, fill: 1, weight: 600),
               ),
               label: 'Device',
             );
