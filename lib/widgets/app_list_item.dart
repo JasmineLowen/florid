@@ -11,12 +11,14 @@ class AppListItem extends StatelessWidget {
   final FDroidApp app;
   final VoidCallback? onTap;
   final bool showCategory;
+  final bool showInstallStatus;
 
   const AppListItem({
     super.key,
     required this.app,
     this.onTap,
     this.showCategory = true,
+    this.showInstallStatus = true,
   });
 
   @override
@@ -26,21 +28,60 @@ class AppListItem extends StatelessWidget {
       onTap: onTap,
       onLongPress: () => _showQuickViewModal(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      leading: Consumer<AppProvider>(
-        builder: (context, appProvider, _) {
+      contentPadding: const EdgeInsets.symmetric(vertical: 6),
+      // minLeadingWidth: 64,
+      leading: Consumer2<AppProvider, DownloadProvider>(
+        builder: (context, appProvider, downloadProvider, _) {
           final isInstalled = appProvider.isAppInstalled(app.packageName);
-          return Material(
-            elevation: 0,
-            child: Container(
-              width: 48,
-              height: 48,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: theme.colorScheme.surfaceContainerHighest,
-              ),
-              child: _MultiIcon(app: app),
+          final version = app.latestVersion;
+          final isDownloading = version != null
+              ? downloadProvider.isDownloading(
+                  app.packageName,
+                  version.versionName,
+                )
+              : false;
+          final progress = version != null
+              ? downloadProvider.getProgress(
+                  app.packageName,
+                  version.versionName,
+                )
+              : 0.0;
+          return SizedBox(
+            width: 72,
+            height: 72,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                AnimatedOpacity(
+                  opacity: isDownloading ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: SizedBox(
+                    width: 86,
+                    height: 86,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: isDownloading ? progress : null,
+                        strokeWidth: 2,
+                        year2023: false,
+                        backgroundColor:
+                            theme.colorScheme.surfaceContainerHighest,
+                      ),
+                    ),
+                  ),
+                ),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: isDownloading ? 24 : 48,
+                  height: isDownloading ? 24 : 48,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: theme.colorScheme.surfaceContainerHighest,
+                  ),
+                  child: _MultiIcon(app: app),
+                ),
+              ],
             ),
           );
         },
@@ -54,14 +95,17 @@ class AppListItem extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(app.summary, maxLines: 2, overflow: TextOverflow.ellipsis),
-      trailing: Consumer<AppProvider>(
-        builder: (context, appProvider, _) {
-          final isInstalled = appProvider.isAppInstalled(app.packageName);
-          if (isInstalled) {
-            return Icon(Symbols.check_circle, weight: 400);
-          }
-          return const SizedBox.shrink();
-        },
+      trailing: Visibility(
+        visible: showInstallStatus,
+        child: Consumer<AppProvider>(
+          builder: (context, appProvider, _) {
+            final isInstalled = appProvider.isAppInstalled(app.packageName);
+            if (isInstalled) {
+              return Icon(Symbols.check_circle, weight: 400);
+            }
+            return const SizedBox.shrink();
+          },
+        ),
       ),
       dense: true,
     );
@@ -302,15 +346,41 @@ class _QuickViewModal extends StatelessWidget {
               Row(
                 spacing: 16,
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: theme.colorScheme.surfaceContainerHighest,
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        AnimatedOpacity(
+                          opacity: isDownloading ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: SizedBox(
+                            width: 64,
+                            height: 64,
+                            child: CircularProgressIndicator(
+                              value: isDownloading ? progress : null,
+                              strokeWidth: 4,
+                              year2023: false,
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                            ),
+                          ),
+                        ),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          width: isDownloading ? 32 : 48,
+                          height: isDownloading ? 32 : 48,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: theme.colorScheme.surfaceContainerHighest,
+                          ),
+                          child: _MultiIcon(app: app),
+                        ),
+                      ],
                     ),
-                    child: _MultiIcon(app: app),
                   ),
                   Expanded(
                     child: Column(
