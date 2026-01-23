@@ -336,86 +336,103 @@ class _QuickViewModal extends StatelessWidget {
             ? downloadProvider.getProgress(app.packageName, version.versionName)
             : 0.0;
 
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header with app icon and info
-              Row(
-                spacing: 16,
-                children: [
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        AnimatedOpacity(
-                          opacity: isDownloading ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 300),
-                          child: SizedBox(
-                            width: 64,
-                            height: 64,
-                            child: CircularProgressIndicator(
-                              value: isDownloading ? progress : null,
-                              strokeWidth: 4,
-                              year2023: false,
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with app icon and info
+            InkWell(
+              onTap: onViewDetails != null
+                  ? () {
+                      Navigator.pop(context);
+                      onViewDetails!();
+                    }
+                  : null,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: Row(
+                  spacing: 16,
+                  children: [
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          AnimatedOpacity(
+                            opacity: isDownloading ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: SizedBox(
+                              width: 64,
+                              height: 64,
+                              child: CircularProgressIndicator(
+                                value: isDownloading ? progress : null,
+                                strokeWidth: 4,
+                                year2023: false,
+                                backgroundColor:
+                                    theme.colorScheme.surfaceContainerHighest,
+                              ),
                             ),
                           ),
-                        ),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                          width: isDownloading ? 32 : 48,
-                          height: isDownloading ? 32 : 48,
-                          clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: theme.colorScheme.surfaceContainerHighest,
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            width: isDownloading ? 32 : 48,
+                            height: isDownloading ? 32 : 48,
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: theme.colorScheme.surfaceContainerHighest,
+                            ),
+                            child: _MultiIcon(app: app),
                           ),
-                          child: _MultiIcon(app: app),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 4,
-                      children: [
-                        Text(
-                          app.name,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          app.packageName,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        if (version != null)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
                           Text(
-                            'v${version.versionName}',
+                            app.name,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            app.packageName,
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                      ],
+                          if (version != null)
+                            Text(
+                              'v${version.versionName}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    Icon(Symbols.arrow_right_alt_rounded),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              // Status badges
-              Wrap(
+            ),
+            // Status badges
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
@@ -438,36 +455,51 @@ class _QuickViewModal extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 20),
-              // Action buttons
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24.0),
+            ),
+            // Action buttons
+            SafeArea(
+              bottom: true,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  bottom: 16.0,
+                  left: 16.0,
+                  right: 16.0,
+                  top: 8.0,
+                ),
+
                 child: Row(
                   spacing: 8,
                   children: [
                     Expanded(
-                      child: FilledButton.tonal(
+                      child: FilledButton.tonalIcon(
                         onPressed: onViewDetails != null
                             ? () {
                                 Navigator.pop(context);
                                 onViewDetails!();
                               }
                             : null,
-                        child: const Text('View Details'),
+                        icon: const Icon(Symbols.info),
+                        label: const Text('View Details'),
                       ),
                     ),
                     if (version != null)
                       Expanded(
                         child: isDownloading
-                            ? FilledButton(
-                                onPressed: null,
-                                child: SizedBox(
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    value: progress,
-                                    strokeWidth: 2,
-                                  ),
+                            ? FilledButton.tonalIcon(
+                                onPressed: () {
+                                  downloadProvider.cancelDownload(
+                                    app.packageName,
+                                    version.versionName,
+                                  );
+                                },
+                                style: FilledButton.styleFrom(
+                                  foregroundColor:
+                                      theme.colorScheme.onErrorContainer,
+                                  backgroundColor:
+                                      theme.colorScheme.errorContainer,
                                 ),
+                                icon: const Icon(Symbols.close),
+                                label: const Text('Cancel'),
                               )
                             : FilledButton.icon(
                                 onPressed: () async {
@@ -570,8 +602,8 @@ class _QuickViewModal extends StatelessWidget {
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
