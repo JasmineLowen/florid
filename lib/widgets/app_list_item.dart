@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../models/fdroid_app.dart';
+import '../providers/app_provider.dart';
 import '../providers/download_provider.dart';
 
 class AppListItem extends StatelessWidget {
@@ -25,17 +26,23 @@ class AppListItem extends StatelessWidget {
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      leading: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(100),
-          color: theme.colorScheme.surface,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(100),
-          child: _MultiIcon(app: app),
-        ),
+      leading: Consumer<AppProvider>(
+        builder: (context, appProvider, _) {
+          final isInstalled = appProvider.isAppInstalled(app.packageName);
+          return Material(
+            elevation: 0,
+            child: Container(
+              width: 48,
+              height: 48,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: theme.colorScheme.surfaceContainerHighest,
+              ),
+              child: _MultiIcon(app: app),
+            ),
+          );
+        },
       ),
       title: Text(
         app.name,
@@ -46,6 +53,15 @@ class AppListItem extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(app.summary, maxLines: 2, overflow: TextOverflow.ellipsis),
+      trailing: Consumer<AppProvider>(
+        builder: (context, appProvider, _) {
+          final isInstalled = appProvider.isAppInstalled(app.packageName);
+          if (isInstalled) {
+            return Icon(Symbols.check_circle, weight: 400);
+          }
+          return const SizedBox.shrink();
+        },
+      ),
       dense: true,
     );
   }
