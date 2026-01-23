@@ -489,7 +489,8 @@ class FDroidApiService {
   /// Downloads an APK file with progress tracking and cancellation support
   Future<String> downloadApk(
     FDroidVersion version,
-    String packageName, {
+    String packageName,
+    String repositoryUrl, {
     Function(double)? onProgress,
     CancelToken? cancelToken,
   }) async {
@@ -508,15 +509,16 @@ class FDroidApiService {
       final filePath = '${downloadsDir.path}/$fileName';
 
       // Log download URL and file path
+      final downloadUrl = version.downloadUrl(repositoryUrl);
       print('[FDroidApiService] Downloading APK:');
-      print('  URL: ${version.downloadUrl}');
+      print('  URL: $downloadUrl');
       print('  To: $filePath');
 
       final token = cancelToken ?? CancelToken();
       _downloadTokens[packageName] = token;
 
       final response = await _dio.download(
-        version.downloadUrl,
+        downloadUrl,
         filePath,
         onReceiveProgress: (received, total) {
           if (total > 0 && onProgress != null) {

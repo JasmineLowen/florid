@@ -204,7 +204,7 @@ class FDroidVersion {
 
   Map<String, dynamic> toJson() => _$FDroidVersionToJson(this);
 
-  String get downloadUrl => 'https://f-droid.org/repo/$apkName';
+  String downloadUrl(String repositoryUrl) => '$repositoryUrl/$apkName';
 
   String get sizeString {
     if (size <= 0) return 'Unknown';
