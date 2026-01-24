@@ -231,126 +231,141 @@ class DatabaseService {
   }) async {
     final db = await database;
 
-    await db.transaction((txn) async {
-      // If no repository ID (official F-Droid), clear all data
-      if (repositoryId == null) {
-        await txn.delete(_appCategoriesTable);
-        await txn.delete(_versionsTable);
-        await txn.delete(_appsTable);
-        await txn.delete(_categoriesTable);
-      } else {
-        // For custom repos, only delete apps from this repository
-        await txn.delete(
-          _appCategoriesTable,
-          where:
-              '''
+    // Use batch operations for much better performance
+    final batch = db.batch();
+
+    // If no repository ID (official F-Droid), clear all data
+    if (repositoryId == null) {
+      batch.delete(_appCategoriesTable);
+      batch.delete(_versionsTable);
+      batch.delete(_appsTable);
+      batch.delete(_categoriesTable);
+    } else {
+      // For custom repos, only delete apps from this repository
+      batch.delete(
+        _appCategoriesTable,
+        where:
+            '''
           package_name IN (SELECT package_name FROM $_appsTable WHERE repository_id = ?)
         ''',
-          whereArgs: [repositoryId],
-        );
-        await txn.delete(
-          _versionsTable,
-          where:
-              '''
+        whereArgs: [repositoryId],
+      );
+      batch.delete(
+        _versionsTable,
+        where:
+            '''
           package_name IN (SELECT package_name FROM $_appsTable WHERE repository_id = ?)
         ''',
-          whereArgs: [repositoryId],
-        );
-        await txn.delete(
-          _appsTable,
-          where: 'repository_id = ?',
-          whereArgs: [repositoryId],
-        );
+        whereArgs: [repositoryId],
+      );
+      batch.delete(
+        _appsTable,
+        where: 'repository_id = ?',
+        whereArgs: [repositoryId],
+      );
+    }
+
+    // Collect unique categories first
+    final uniqueCategories = <String>{};
+    for (final app in repository.apps.values) {
+      if (app.categories != null) {
+        uniqueCategories.addAll(app.categories!);
+      }
+    }
+
+    // Insert unique categories
+    for (final category in uniqueCategories) {
+      batch.insert(_categoriesTable, {
+        'category': category,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+
+    // Batch insert apps, versions, and app-category relationships
+    for (final app in repository.apps.values) {
+      batch.insert(_appsTable, {
+        'package_name': app.packageName,
+        'repository_id': repositoryId,
+        'name': app.name,
+        'summary': app.summary,
+        'description': app.description,
+        'icon': app.icon,
+        'author_name': app.authorName,
+        'author_email': app.authorEmail,
+        'author_website': app.authorWebSite,
+        'website': app.webSite,
+        'issue_tracker': app.issueTracker,
+        'source_code': app.sourceCode,
+        'changelog': app.changelog,
+        'donate': app.donate,
+        'bitcoin': app.bitcoin,
+        'flattr_id': app.flattrID,
+        'license': app.license,
+        'suggested_version_name': app.suggestedVersionName,
+        'suggested_version_code': app.suggestedVersionCode,
+        'added': app.added?.millisecondsSinceEpoch,
+        'last_updated': app.lastUpdated?.millisecondsSinceEpoch,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+
+      // Batch insert versions
+      if (app.packages != null) {
+        for (final version in app.packages!.values) {
+          batch.insert(_versionsTable, {
+            'package_name': app.packageName,
+            'version_code': version.versionCode,
+            'version_name': version.versionName,
+            'size': version.size,
+            'min_sdk_version': version.minSdkVersion,
+            'target_sdk_version': version.targetSdkVersion,
+            'max_sdk_version': version.maxSdkVersion,
+            'added': version.added.millisecondsSinceEpoch,
+            'apk_name': version.apkName,
+            'hash': version.hash,
+            'hash_type': version.hashType,
+            'sig': version.sig,
+            'permissions': version.permissions != null
+                ? jsonEncode(version.permissions)
+                : null,
+            'features': version.features != null
+                ? jsonEncode(version.features)
+                : null,
+            'nativecode': version.nativecode != null
+                ? jsonEncode(version.nativecode)
+                : null,
+          }, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
       }
 
-      // Insert apps
-      for (final app in repository.apps.values) {
-        await txn.insert(_appsTable, {
-          'package_name': app.packageName,
-          'repository_id': repositoryId,
-          'name': app.name,
-          'summary': app.summary,
-          'description': app.description,
-          'icon': app.icon,
-          'author_name': app.authorName,
-          'author_email': app.authorEmail,
-          'author_website': app.authorWebSite,
-          'website': app.webSite,
-          'issue_tracker': app.issueTracker,
-          'source_code': app.sourceCode,
-          'changelog': app.changelog,
-          'donate': app.donate,
-          'bitcoin': app.bitcoin,
-          'flattr_id': app.flattrID,
-          'license': app.license,
-          'suggested_version_name': app.suggestedVersionName,
-          'suggested_version_code': app.suggestedVersionCode,
-          'added': app.added?.millisecondsSinceEpoch,
-          'last_updated': app.lastUpdated?.millisecondsSinceEpoch,
-        }, conflictAlgorithm: ConflictAlgorithm.replace);
-
-        // Insert versions
-        if (app.packages != null) {
-          for (final version in app.packages!.values) {
-            await txn.insert(_versionsTable, {
-              'package_name': app.packageName,
-              'version_code': version.versionCode,
-              'version_name': version.versionName,
-              'size': version.size,
-              'min_sdk_version': version.minSdkVersion,
-              'target_sdk_version': version.targetSdkVersion,
-              'max_sdk_version': version.maxSdkVersion,
-              'added': version.added.millisecondsSinceEpoch,
-              'apk_name': version.apkName,
-              'hash': version.hash,
-              'hash_type': version.hashType,
-              'sig': version.sig,
-              'permissions': version.permissions != null
-                  ? jsonEncode(version.permissions)
-                  : null,
-              'features': version.features != null
-                  ? jsonEncode(version.features)
-                  : null,
-              'nativecode': version.nativecode != null
-                  ? jsonEncode(version.nativecode)
-                  : null,
-            }, conflictAlgorithm: ConflictAlgorithm.replace);
-          }
-        }
-
-        // Insert categories
-        if (app.categories != null) {
-          for (final category in app.categories!) {
-            await txn.insert(_categoriesTable, {
-              'category': category,
-            }, conflictAlgorithm: ConflictAlgorithm.ignore);
-            await txn.insert(_appCategoriesTable, {
-              'package_name': app.packageName,
-              'category': category,
-            }, conflictAlgorithm: ConflictAlgorithm.ignore);
-          }
+      // Batch insert app-category relationships
+      if (app.categories != null) {
+        for (final category in app.categories!) {
+          batch.insert(_appCategoriesTable, {
+            'package_name': app.packageName,
+            'category': category,
+          }, conflictAlgorithm: ConflictAlgorithm.ignore);
         }
       }
+    }
 
-      // Store sync timestamp
-      await txn.insert(_metadataTable, {
-        'key': 'last_sync',
-        'value': DateTime.now().millisecondsSinceEpoch.toString(),
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    // Store metadata
+    final now = DateTime.now().millisecondsSinceEpoch;
+    batch.insert(_metadataTable, {
+      'key': 'last_sync',
+      'value': now.toString(),
+      'updated_at': now,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    batch.insert(_metadataTable, {
+      'key': 'repo_name',
+      'value': repository.name,
+      'updated_at': now,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    batch.insert(_metadataTable, {
+      'key': 'repo_description',
+      'value': repository.description,
+      'updated_at': now,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
 
-      // Store repository metadata
-      await txn.insert(_metadataTable, {
-        'key': 'repo_name',
-        'value': repository.name,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
-      await txn.insert(_metadataTable, {
-        'key': 'repo_description',
-        'value': repository.description,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
-    });
+    // Commit all operations at once
+    await batch.commit(noResult: true);
   }
 
   /// Gets all apps from the database

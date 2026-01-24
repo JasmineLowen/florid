@@ -34,9 +34,19 @@ class FDroidApiService {
 
   /// Sets the repository URL (e.g., from the main F-Droid or a custom repo)
   void setRepositoryUrl(String url) {
-    baseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+    // Remove trailing slash
+    var cleanUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+
+    // If URL already ends with /repo, use it as-is for base; otherwise add /repo
+    if (cleanUrl.endsWith('/repo')) {
+      baseUrl = cleanUrl.substring(0, cleanUrl.length - 5); // Remove /repo
+      repoIndexUrl = '$cleanUrl/index-v2.json';
+    } else {
+      baseUrl = cleanUrl;
+      repoIndexUrl = '$cleanUrl/repo/index-v2.json';
+    }
+
     apiUrl = '$baseUrl/api/v1';
-    repoIndexUrl = '$baseUrl/repo/index-v2.json';
     debugPrint('Set repository URL: $repoIndexUrl');
   }
 
@@ -109,7 +119,7 @@ class FDroidApiService {
 
     // Try to fetch from network
     try {
-      debugPrint('Fetching from network...');
+      debugPrint('Fetching from network: $repoIndexUrl');
       final response = await _client.get(Uri.parse(repoIndexUrl!));
 
       if (response.statusCode == 200) {
