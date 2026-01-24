@@ -1,9 +1,11 @@
+import 'package:florid/widgets/m_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/download_provider.dart';
 import '../providers/settings_provider.dart';
@@ -73,123 +75,208 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context, settings, _) {
         return Scaffold(
           appBar: AppBar(title: const Text('Settings')),
-          body: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            children: [
-              _SectionHeader(label: 'Appearance'),
-              RadioListTile<ThemeMode>(
-                title: const Text('System default'),
-                value: ThemeMode.system,
-                groupValue: settings.themeMode,
-                onChanged: (mode) {
-                  if (mode != null) settings.setThemeMode(mode);
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: const Text('Light'),
-                value: ThemeMode.light,
-                groupValue: settings.themeMode,
-                onChanged: (mode) {
-                  if (mode != null) settings.setThemeMode(mode);
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: const Text('Dark'),
-                value: ThemeMode.dark,
-                groupValue: settings.themeMode,
-                onChanged: (mode) {
-                  if (mode != null) settings.setThemeMode(mode);
-                },
-              ),
-              const Divider(height: 24),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 16,
+                children: [
+                  Column(
+                    spacing: 4,
+                    children: [
+                      MListHeader(title: 'Appearance'),
+                      MRadioListView(
+                        items: [
+                          MRadioListItemData<ThemeMode>(
+                            title: 'Follow system theme',
+                            subtitle: '',
+                            value: ThemeMode.system,
+                          ),
+                          MRadioListItemData<ThemeMode>(
+                            title: 'Light theme',
+                            subtitle: '',
+                            value: ThemeMode.light,
+                          ),
+                          MRadioListItemData<ThemeMode>(
+                            title: 'Dark theme',
+                            subtitle: '',
+                            value: ThemeMode.dark,
+                          ),
+                        ],
+                        groupValue: settings.themeMode,
+                        onChanged: (mode) {
+                          settings.setThemeMode(mode);
+                        },
+                      ),
+                    ],
+                  ),
+                  Column(
+                    spacing: 4,
+                    children: [
+                      MListHeader(title: 'General Settings'),
+                      MListView(
+                        items: [
+                          MListItemData(
+                            leading: Icon(Symbols.language),
+                            title: 'App content language',
+                            onTap: () => _showLanguageDialog(context, settings),
+                            subtitle: SettingsProvider.getLocaleDisplayName(
+                              settings.locale,
+                            ),
+                            suffix: Icon(Symbols.chevron_right),
+                          ),
+                          MListItemData(
+                            leading: Icon(Symbols.cloud),
+                            title: 'Manage repositories',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const RepositoriesScreen(),
+                                ),
+                              );
+                            },
+                            subtitle: 'Add or remove F-Droid repositories',
+                            suffix: Icon(Symbols.chevron_right),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
 
-              _SectionHeader(label: 'Language'),
-              ListTile(
-                leading: const Icon(Symbols.language),
-                title: const Text('App content language'),
-                subtitle: Text(
-                  SettingsProvider.getLocaleDisplayName(settings.locale),
-                ),
-                trailing: const Icon(Symbols.chevron_right),
-                onTap: () => _showLanguageDialog(context, settings),
-              ),
-              const Divider(height: 24),
+                  Column(
+                    spacing: 4,
+                    children: [
+                      MListHeader(title: 'Downloads & Storage'),
+                      MListView(
+                        items: [
+                          MListItemData(
+                            title: 'Auto-install after download',
+                            onTap: () {
+                              settings.setAutoInstallApk(
+                                !settings.autoInstallApk,
+                              );
+                            },
+                            subtitle:
+                                'Install APKs automatically once download finishes',
+                            suffix: Switch(
+                              value: settings.autoInstallApk,
+                              onChanged: (value) {
+                                settings.setAutoInstallApk(value);
+                              },
+                            ),
+                          ),
+                          MListItemData(
+                            title: 'Delete APK after install',
+                            onTap: () {
+                              settings.setAutoInstallApk(
+                                !settings.autoInstallApk,
+                              );
+                            },
+                            subtitle:
+                                'Remove installer files after successful installation',
+                            suffix: Switch(
+                              value: settings.autoDeleteApk,
+                              onChanged: (value) {
+                                settings.setAutoDeleteApk(value);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      MListView(
+                        items: [
+                          MListItemData(
+                            leading: Icon(Symbols.cleaning_services),
+                            title: 'Clear repository cache',
+                            onTap: () {
+                              _clearRepoCache(context);
+                            },
+                            subtitle:
+                                'Refresh app list and metadata on next load',
+                          ),
+                          MListItemData(
+                            leading: Icon(Symbols.delete_sweep),
+                            title: 'Clear APK downloads',
+                            onTap: () {
+                              _clearRepoCache(context);
+                            },
+                            subtitle:
+                                'Remove downloaded installer files from storage',
+                          ),
+                          MListItemData(
+                            leading: Icon(Symbols.image_not_supported),
+                            title: 'Clear image cache',
+                            onTap: () {
+                              _clearRepoCache(context);
+                            },
+                            subtitle: 'Remove cached icons and screenshots',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
 
-              _SectionHeader(label: 'Repositories'),
-              ListTile(
-                leading: const Icon(Symbols.cloud),
-                title: const Text('Manage repositories'),
-                subtitle: const Text('Add or remove F-Droid repositories'),
-                trailing: const Icon(Symbols.chevron_right),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RepositoriesScreen(),
-                    ),
-                  );
-                },
+                  Column(
+                    spacing: 4,
+                    children: [
+                      MListHeader(title: 'About'),
+                      MListView(
+                        items: [
+                          MListItemData(
+                            leading: Icon(Symbols.info),
+                            title: 'Version',
+                            subtitle: _appVersion.isEmpty
+                                ? 'Loading…'
+                                : _appVersion,
+                            onTap: () {},
+                          ),
+                          MListItemData(
+                            leading: Icon(Symbols.code_rounded),
+                            title: 'Source code',
+                            onTap: () async {
+                              final url = Uri.parse(
+                                'https://github.com/Nandanrmenon/florid',
+                              );
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url);
+                              }
+                            },
+                          ),
+                          MListItemData(
+                            leading: Icon(Symbols.bug_report_rounded),
+                            title: 'Report an issue',
+                            onTap: () async {
+                              final url = Uri.parse(
+                                'https://github.com/Nandanrmenon/florid/issues/new?template=bug_report.md',
+                              );
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url);
+                              }
+                            },
+                          ),
+                          MListItemData(
+                            leading: Icon(Symbols.share),
+                            title: 'Share Florid',
+                            onTap: () {
+                              SharePlus.instance.share(
+                                ShareParams(
+                                  title: 'Check out Florid!',
+                                  text:
+                                      'A modern F-Droid client! https://github.com/Nandanrmenon/florid',
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const Divider(height: 24),
-
-              _SectionHeader(label: 'Downloads'),
-              SwitchListTile(
-                title: const Text('Auto-install after download'),
-                subtitle: const Text(
-                  'Install APKs automatically once download finishes',
-                ),
-                value: settings.autoInstallApk,
-                onChanged: (value) => settings.setAutoInstallApk(value),
-              ),
-              SwitchListTile(
-                title: const Text('Delete APK after install'),
-                subtitle: const Text(
-                  'Remove installer files after successful installation',
-                ),
-                value: settings.autoDeleteApk,
-                onChanged: (value) => settings.setAutoDeleteApk(value),
-              ),
-              const Divider(height: 24),
-
-              _SectionHeader(label: 'Storage & cache'),
-              ListTile(
-                leading: const Icon(Symbols.cleaning_services),
-                title: const Text('Clear repository cache'),
-                subtitle: const Text(
-                  'Refresh app list and metadata on next load',
-                ),
-                onTap: () => _clearRepoCache(context),
-              ),
-              ListTile(
-                leading: const Icon(Symbols.delete_sweep),
-                title: const Text('Clear APK downloads'),
-                subtitle: const Text(
-                  'Remove downloaded installer files from storage',
-                ),
-                onTap: () => _clearApkDownloads(context),
-              ),
-              ListTile(
-                leading: const Icon(Symbols.image_not_supported),
-                title: const Text('Clear image cache'),
-                subtitle: const Text('Remove cached icons and screenshots'),
-                onTap: () => _clearImageCache(context),
-              ),
-              const Divider(height: 24),
-
-              _SectionHeader(label: 'About'),
-              ListTile(
-                leading: const Icon(Symbols.info),
-                title: const Text('Version'),
-                subtitle: Text(_appVersion.isEmpty ? 'Loading…' : _appVersion),
-              ),
-              ListTile(
-                leading: const Icon(Symbols.share),
-                title: const Text('Share Florid'),
-                onTap: () {
-                  Share.share('Check out Florid, a modern F-Droid client!');
-                },
-              ),
-            ],
+            ),
           ),
         );
       },
