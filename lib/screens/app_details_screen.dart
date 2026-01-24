@@ -803,12 +803,33 @@ class _DownloadSectionState extends State<_DownloadSection> {
             ),
             if (isDownloading) ...[
               const SizedBox(height: 16),
-              Text(
-                'Downloading... ${(progress * 100).toInt()}%',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Downloading... ${(progress * 100).toInt()}%',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (downloadInfo != null && downloadInfo.totalBytes > 0)
+                    Text(
+                      '${downloadInfo.formattedBytesDownloaded} / ${downloadInfo.formattedTotalBytes}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
               ),
+              const SizedBox(height: 4),
+              if (downloadInfo != null)
+                Text(
+                  downloadInfo.formattedSpeed,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               const SizedBox(height: 8),
               LinearProgressIndicator(value: progress, year2023: false),
             ],

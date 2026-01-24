@@ -19,6 +19,9 @@ class DownloadInfo {
   final double progress;
   final String? filePath;
   final String? error;
+  final int bytesDownloaded;
+  final int totalBytes;
+  final double downloadSpeed; // bytes per second
 
   const DownloadInfo({
     required this.packageName,
@@ -27,6 +30,9 @@ class DownloadInfo {
     this.progress = 0.0,
     this.filePath,
     this.error,
+    this.bytesDownloaded = 0,
+    this.totalBytes = 0,
+    this.downloadSpeed = 0.0,
   });
 
   DownloadInfo copyWith({
@@ -34,6 +40,9 @@ class DownloadInfo {
     double? progress,
     String? filePath,
     String? error,
+    int? bytesDownloaded,
+    int? totalBytes,
+    double? downloadSpeed,
   }) {
     return DownloadInfo(
       packageName: packageName,
@@ -42,10 +51,25 @@ class DownloadInfo {
       progress: progress ?? this.progress,
       filePath: filePath ?? this.filePath,
       error: error ?? this.error,
+      bytesDownloaded: bytesDownloaded ?? this.bytesDownloaded,
+      totalBytes: totalBytes ?? this.totalBytes,
+      downloadSpeed: downloadSpeed ?? this.downloadSpeed,
     );
   }
 
   String get key => '${packageName}_$versionName';
+
+  String get formattedBytesDownloaded => _formatBytes(bytesDownloaded);
+  String get formattedTotalBytes => _formatBytes(totalBytes);
+  String get formattedSpeed => '${_formatBytes(downloadSpeed.toInt())}/s';
+
+  static String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+  }
 }
 
 class DownloadProvider extends ChangeNotifier {
@@ -197,13 +221,39 @@ class DownloadProvider extends ChangeNotifier {
       maxProgress: 100,
     );
 
+    // Track download speed with 5-second sampling intervals
+    int lastSpeedBytes = 0;
+    DateTime lastSpeedTime = DateTime.now();
+    double currentSpeed = 0.0;
+
     try {
       final filePath = await _apiService.downloadApk(
         version,
         app.packageName,
         app.repositoryUrl,
-        onProgress: (progress) {
-          _downloads[key] = _downloads[key]!.copyWith(progress: progress);
+        onProgress: (received, total) {
+          final now = DateTime.now();
+          final timeSinceLastSpeedUpdate =
+              now.difference(lastSpeedTime).inMilliseconds / 1000.0;
+
+          // Update speed every 5 seconds for smoother display
+          if (timeSinceLastSpeedUpdate >= 1.0) {
+            final bytesDiff = received - lastSpeedBytes;
+            if (timeSinceLastSpeedUpdate > 0) {
+              currentSpeed = bytesDiff / timeSinceLastSpeedUpdate;
+            }
+            lastSpeedBytes = received;
+            lastSpeedTime = now;
+          }
+
+          final progress = total > 0 ? received / total : 0.0;
+
+          _downloads[key] = _downloads[key]!.copyWith(
+            progress: progress,
+            bytesDownloaded: received,
+            totalBytes: total,
+            downloadSpeed: currentSpeed,
+          );
           notifyListeners();
 
           // Update notification with progress

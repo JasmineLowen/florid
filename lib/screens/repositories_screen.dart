@@ -101,11 +101,7 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Presets',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 8),
+                      MListHeader(title: 'Preset'),
                       MListViewBuilder(
                         itemCount: _presets.length,
                         itemBuilder: (index) {
@@ -181,9 +177,6 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                           );
                         },
                       ),
-                      const SizedBox(height: 8),
-                      const Divider(),
-                      const SizedBox(height: 8),
                     ],
                   ),
                 ),

@@ -518,7 +518,7 @@ class FDroidApiService {
     FDroidVersion version,
     String packageName,
     String repositoryUrl, {
-    Function(double)? onProgress,
+    Function(int received, int total)? onProgress,
     CancelToken? cancelToken,
   }) async {
     try {
@@ -549,7 +549,7 @@ class FDroidApiService {
         filePath,
         onReceiveProgress: (received, total) {
           if (total > 0 && onProgress != null) {
-            onProgress(received / total);
+            onProgress(received, total);
           }
         },
         cancelToken: token,
