@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:florid/constants.dart';
 import 'package:florid/screens/florid_app.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/app_provider.dart';
@@ -44,6 +47,7 @@ class MainApp extends StatelessWidget {
             // Create new service with current locale
             final service = FDroidApiService();
             service.setLocale(settings.locale);
+            _initializeDefaultRepository(service);
             return service;
           },
         ),
@@ -110,3 +114,28 @@ class MainApp extends StatelessWidget {
     );
   }
 }
+
+/// Initializes the default repository URL from the JSON configuration
+Future<void> _initializeDefaultRepository(FDroidApiService service) async {
+  try {
+    final jsonString = await rootBundle.loadString('assets/repositories.json');
+    final jsonData = jsonDecode(jsonString);
+    final repos = (jsonData['repositories'] as List?)
+        ?.cast<Map<String, dynamic>>();
+
+    if (repos != null && repos.isNotEmpty) {
+      // Find the first enabled repository (usually F-Droid)
+      final firstRepo = repos.first;
+      if (firstRepo['url'] is String) {
+        service.setRepositoryUrl(firstRepo['url'] as String);
+      }
+    }
+  } catch (e) {
+    debugPrint('Error initializing default repository: $e');
+    // Set a default F-Droid URL as fallback
+    service.setRepositoryUrl('https://f-droid.org/repo');
+  }
+}
+
+// Store build context for asset loading
+late BuildContext buildContext;

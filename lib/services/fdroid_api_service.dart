@@ -10,9 +10,9 @@ import '../models/fdroid_app.dart';
 import 'database_service.dart';
 
 class FDroidApiService {
-  static const String baseUrl = 'https://f-droid.org';
-  static const String apiUrl = '$baseUrl/api/v1';
-  static const String repoIndexUrl = '$baseUrl/repo/index-v2.json';
+  String? baseUrl;
+  String? apiUrl;
+  String? repoIndexUrl;
   static const String _cacheFileName = 'fdroid_index_cache.json';
   static const Duration _fallbackCacheMaxAge = Duration(hours: 6);
 
@@ -31,6 +31,17 @@ class FDroidApiService {
   }) : _client = client ?? http.Client(),
        _dio = dio ?? Dio(),
        _databaseService = databaseService ?? DatabaseService();
+
+  /// Sets the repository URL (e.g., from the main F-Droid or a custom repo)
+  void setRepositoryUrl(String url) {
+    baseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+    apiUrl = '$baseUrl/api/v1';
+    repoIndexUrl = '$baseUrl/repo/index-v2.json';
+    debugPrint('Set repository URL: $repoIndexUrl');
+  }
+
+  /// Checks if a repository URL has been configured
+  bool hasRepositoryUrl() => repoIndexUrl != null;
 
   /// Returns the cache file location for the repo index.
   Future<File> _cacheFile() async {
@@ -66,9 +77,15 @@ class FDroidApiService {
     }
   }
 
-  /// Fetches the complete F-Droid repository index with database caching.
+  /// Fetches the complete repository index with database caching.
   /// Flow: try database (fresh) -> network -> database fallback on network failure.
   Future<FDroidRepository> fetchRepository() async {
+    if (!hasRepositoryUrl()) {
+      throw Exception(
+        'No repository URL configured. Call setRepositoryUrl() first.',
+      );
+    }
+
     debugPrint('=== fetchRepository called ===');
 
     // Check if database is populated and fresh
@@ -93,7 +110,7 @@ class FDroidApiService {
     // Try to fetch from network
     try {
       debugPrint('Fetching from network...');
-      final response = await _client.get(Uri.parse(repoIndexUrl));
+      final response = await _client.get(Uri.parse(repoIndexUrl!));
 
       if (response.statusCode == 200) {
         final body = response.body;

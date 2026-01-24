@@ -9,6 +9,7 @@ import '../providers/app_provider.dart';
 import '../providers/repositories_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/fdroid_api_service.dart';
+import '../widgets/m_list.dart';
 import 'florid_app.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -25,7 +26,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
   String _progressStatus = 'Initializing...';
   double _progressValue = 0.0;
-  List<Map<String, String>> _presets = [];
+  List<Map<String, dynamic>> _presets = [];
 
   @override
   void initState() {
@@ -50,15 +51,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               'name': e['name'] as String,
               'url': e['url'] as String,
               'description': e['description'] as String? ?? '',
+              'default': e['default'] as bool? ?? false,
             },
           )
           .toList();
 
       setState(() {
         _presets = repos;
-        // Pre-select IzzyOnDroid if it exists
+        // Apply default selections from JSON
         for (var repo in repos) {
-          _selectedRepos[repo['url']!] = repo['name'] == 'IzzyOnDroid';
+          _selectedRepos[repo['url'] as String] = repo['default'] == true;
         }
       });
     } catch (e) {
@@ -275,16 +277,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: SizedBox(
                         height: 48,
                         child: FilledButton(
-                          onPressed: () {
-                            if (_currentPage == 0) {
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 250),
-                                curve: Curves.easeOut,
-                              );
-                            } else if (_currentPage == 1) {
-                              _startSetup();
-                            }
-                          },
+                          onPressed:
+                              _currentPage == 1 &&
+                                  !_selectedRepos.values.any(
+                                    (selected) => selected,
+                                  )
+                              ? null
+                              : () {
+                                  if (_currentPage == 0) {
+                                    _pageController.nextPage(
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      curve: Curves.easeOut,
+                                    );
+                                  } else if (_currentPage == 1) {
+                                    _startSetup();
+                                  }
+                                },
                           child: Text(
                             _currentPage == 1 ? 'Start Setup' : 'Continue',
                           ),
@@ -362,79 +372,78 @@ class _ReposStep extends StatelessWidget {
   });
 
   final Map<String, bool> selectedRepos;
-  final List<Map<String, String>> presets;
+  final List<Map<String, dynamic>> presets;
   final Function(String url, bool selected) onToggleRepo;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 12),
-          Row(
-            spacing: 8,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 24.0,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 24.0, right: 16.0),
+          child: Column(
+            spacing: 16.0,
             children: [
-              Icon(Symbols.dns),
+              Row(
+                spacing: 8,
+                children: [
+                  CircleAvatar(child: Icon(Symbols.dns)),
+                  Text(
+                    'Add extra repositories',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ],
+              ).animate().fadeIn(duration: 500.ms),
               Text(
-                'Add extra repositories',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+                'Florid ships with the official F-Droid repo. You can also include trusted community repos to get more apps.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ).animate().fadeIn(duration: 500.ms, delay: 200.ms),
             ],
-          ).animate().fadeIn(duration: 500.ms),
-          const SizedBox(height: 12),
-          Text(
-            'Florid ships with the official F-Droid repo. You can also include trusted community repos to get more apps.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ).animate().fadeIn(duration: 500.ms, delay: 200.ms),
-          const SizedBox(height: 24),
-          if (presets.isEmpty)
-            Center(child: CircularProgressIndicator())
-          else
-            ...List.generate(presets.length, (index) {
-              final preset = presets[index];
-              final url = preset['url']!;
-              final isSelected = selectedRepos[url] ?? false;
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child:
-                    Card(
-                      elevation: 0,
-                      color: colorScheme.surfaceContainerHighest,
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: CheckboxListTile(
-                        value: isSelected,
-                        onChanged: (value) => onToggleRepo(url, value ?? false),
-                        title: Text(preset['name']!),
-                        subtitle: Text(preset['description']!),
-                        secondary: const Icon(Symbols.extension),
-                      ),
-                    ).animate().fadeIn(
-                      duration: 500.ms,
-                      delay: Duration(milliseconds: 400 + (index * 100)),
-                    ),
-              );
-            }),
-          const Spacer(),
-          Text(
-            'You can add or remove repositories anytime in Settings.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(duration: 500.ms, delay: 600.ms),
-          const SizedBox(height: 12),
-        ],
-      ),
+          ),
+        ),
+        Column(
+          spacing: 4.0,
+          children: [
+            if (presets.isNotEmpty)
+              MListHeader(
+                title: 'Available Repositories',
+              ).animate().fadeIn(duration: 500.ms, delay: 400.ms),
+            if (presets.isEmpty)
+              Center(child: CircularProgressIndicator())
+            else
+              MCheckboxListViewBuilder(
+                itemCount: presets.length,
+                itemBuilder: (index) {
+                  final preset = presets[index];
+                  final url = preset['url'] as String;
+                  return MCheckboxListItemData(
+                    title: preset['name'],
+                    subtitle: preset['description'],
+                    value: selectedRepos[url] ?? false,
+                  );
+                },
+                onChanged: (index, value) {
+                  final url = presets[index]['url'] as String;
+                  onToggleRepo(url, value);
+                },
+              ).animate().fadeIn(duration: 500.ms, delay: 600.ms),
+          ],
+        ),
+        Text(
+          'You can add or remove repositories anytime in Settings.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          textAlign: TextAlign.center,
+        ).animate().fadeIn(duration: 500.ms, delay: 600.ms),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }
