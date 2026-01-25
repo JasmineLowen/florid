@@ -1,0 +1,10 @@
+What's New?
+The app is heading somewhere!
+
+Features
+- Cleaner & better SettingsView
+- Add repository presets and selection UI
+- Add download speed and progress details to downloads
+
+Bugs
+- Optimize database sync with batch operations

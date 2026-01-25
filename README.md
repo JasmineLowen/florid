@@ -6,6 +6,12 @@ Browse, search, and install open‑source Android apps from the F‑Droid reposi
 
 </div>
 
+<div align="center" style="margin-top:8px; margin-bottom:16px;">
+	<a href="https://github.com/Nandanrmenon/florid/releases/latest">
+		<img src="https://img.shields.io/github/v/release/Nandanrmenon/florid?label=Latest%20release&logo=github" alt="Latest release" />
+	</a>
+</div>
+
 ## Features
 
 - Latest and trending: Browse recently added and updated apps
@@ -22,17 +28,18 @@ Browse, search, and install open‑source Android apps from the F‑Droid reposi
 
 ## Screenshots
 
-|                                                               |                                                               |                                                               |                                                               |
-| :-----------------------------------------------------------: | :-----------------------------------------------------------: | :-----------------------------------------------------------: | :-----------------------------------------------------------: |
-| <img src="assets/screenshots/Screenshot-1.png" width="260" /> | <img src="assets/screenshots/Screenshot-2.png" width="260" /> | <img src="assets/screenshots/Screenshot-3.png" width="260" /> | <img src="assets/screenshots/Screenshot-4.png" width="260" /> |
-| <img src="assets/screenshots/Screenshot-5.png" width="260" /> | <img src="assets/screenshots/Screenshot-6.png" width="260" /> | <img src="assets/screenshots/Screenshot-7.png" width="260" /> | <img src="assets/screenshots/Screenshot-8.png" width="260" /> |
+|                                                               |                                                                |                                                               |                                                               |
+| :-----------------------------------------------------------: | :------------------------------------------------------------: | :-----------------------------------------------------------: | :-----------------------------------------------------------: |
+| <img src="assets/screenshots/Screenshot-1.png" width="260" /> | <img src="assets/screenshots/Screenshot-2.png" width="260" />  | <img src="assets/screenshots/Screenshot-3.png" width="260" /> | <img src="assets/screenshots/Screenshot-4.png" width="260" /> |
+| <img src="assets/screenshots/Screenshot-5.png" width="260" /> | <img src="assets/screenshots/Screenshot-6.png" width="260" />  | <img src="assets/screenshots/Screenshot-7.png" width="260" /> | <img src="assets/screenshots/Screenshot-8.png" width="260" /> |
+| <img src="assets/screenshots/Screenshot-9.png" width="260" /> | <img src="assets/screenshots/Screenshot-10.png" width="260" /> |                                                               |                                                               |
 
 ## Getting Started
 
 ### Prerequisites
 
 - Flutter (stable channel)
-- Dart SDK >= 3.9.2 (per `environment.sdk`)
+- Dart SDK >= 3.9.2
 - Android SDK + device/emulator (Android 8.0+ recommended)
 
 ### Setup
@@ -56,13 +63,7 @@ First launch performs an initial repository sync and caches data locally for fas
 Build a release APK:
 
 ```bash
-flutter build apk --release
-```
-
-Optionally, build an Android App Bundle:
-
-```bash
-flutter build appbundle --release
+flutter build apk
 ```
 
 ## Architecture

@@ -1,0 +1,6 @@
+What's Changed?
+
+- Support for multiple repository starting of with IzzyOnDroid. Users can add repo of their wishes.
+- Better and cleaner update screens
+- Smoother Animations
+- Improvement in loading speeds after initialization
