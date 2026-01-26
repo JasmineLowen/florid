@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -100,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Recently Updated',
+                              'recently_updated'.tr(),
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(fontWeight: FontWeight.w600),
                             ),
@@ -108,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen>
                               onPressed: _openRecentlyUpdatedScreen,
                               iconAlignment: IconAlignment.end,
                               icon: Icon(Symbols.arrow_forward),
-                              label: Text('More'),
+                              label: Text('show_more'.tr()),
                             ),
                           ],
                         ),
@@ -186,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen>
                             onPressed: _openLatestScreen,
                             iconAlignment: IconAlignment.end,
                             icon: Icon(Symbols.arrow_forward),
-                            label: Text('More'),
+                            label: Text('show_more'.tr()),
                           ),
                         ],
                       ),

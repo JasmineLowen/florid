@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:florid/providers/app_provider.dart';
 import 'package:florid/providers/repositories_provider.dart';
 import 'package:florid/screens/categories_screen.dart';
@@ -36,7 +37,7 @@ class _LibraryScreenState extends State<LibraryScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Florid'),
+        title: Text('app_name'.tr()),
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         surfaceTintColor: Theme.of(context).colorScheme.surfaceContainerLow,
         actions: [
@@ -55,19 +56,19 @@ class _LibraryScreenState extends State<LibraryScreen>
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'refresh',
                 child: ListTile(
-                  leading: Icon(Symbols.refresh),
-                  title: Text('Refresh'),
+                  leading: const Icon(Symbols.refresh),
+                  title: Text('refresh'.tr()),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'settings',
                 child: ListTile(
-                  leading: Icon(Symbols.settings),
-                  title: Text('Settings'),
+                  leading: const Icon(Symbols.settings),
+                  title: Text('settings'.tr()),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -88,8 +89,8 @@ class _LibraryScreenState extends State<LibraryScreen>
             _tabController.animateTo(index);
           },
           items: [
-            FloridTabBarItem(icon: Symbols.home, label: 'Home'),
-            FloridTabBarItem(icon: Symbols.category, label: 'Categories'),
+            FloridTabBarItem(icon: Symbols.home, label: 'home'.tr()),
+            FloridTabBarItem(icon: Symbols.category, label: 'categories'.tr()),
           ],
         ),
       ),

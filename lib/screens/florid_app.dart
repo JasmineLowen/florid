@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:florid/screens/library_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -44,24 +45,6 @@ class _FloridAppState extends State<FloridApp> {
     super.dispose();
   }
 
-  final List<NavigationDestination> _destinations = const [
-    NavigationDestination(
-      icon: Icon(Symbols.newsstand_rounded),
-      selectedIcon: Icon(Symbols.newsstand_rounded, fill: 1, weight: 600),
-      label: 'Library',
-    ),
-    NavigationDestination(
-      icon: Icon(Symbols.search),
-      selectedIcon: Icon(Symbols.search, fill: 1, weight: 600),
-      label: 'Search',
-    ),
-    NavigationDestination(
-      icon: Icon(Symbols.mobile_3_rounded),
-      selectedIcon: Icon(Symbols.mobile_3_rounded, fill: 1, weight: 600),
-      label: 'Device',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,22 +52,43 @@ class _FloridAppState extends State<FloridApp> {
       bottomNavigationBar: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
           final updatableAppsCount = appProvider.getUpdatableApps().length;
-          final destinations = List<NavigationDestination>.from(_destinations);
 
-          // Add badge to Device tab if there are updates
-          if (updatableAppsCount > 0) {
-            destinations[2] = NavigationDestination(
-              icon: Badge.count(
-                count: updatableAppsCount,
-                child: Icon(Symbols.mobile_3_rounded),
+          // Build destinations with translations
+          final destinations = [
+            NavigationDestination(
+              icon: const Icon(Symbols.newsstand_rounded),
+              selectedIcon: const Icon(
+                Symbols.newsstand_rounded,
+                fill: 1,
+                weight: 600,
               ),
-              selectedIcon: Badge.count(
-                count: updatableAppsCount,
-                child: Icon(Symbols.mobile_3_rounded, fill: 1, weight: 600),
-              ),
-              label: 'Device',
-            );
-          }
+              label: 'home'.tr(),
+            ),
+            NavigationDestination(
+              icon: const Icon(Symbols.search),
+              selectedIcon: const Icon(Symbols.search, fill: 1, weight: 600),
+              label: 'search'.tr(),
+            ),
+            NavigationDestination(
+              icon: updatableAppsCount > 0
+                  ? Badge.count(
+                      count: updatableAppsCount,
+                      child: const Icon(Symbols.mobile_3_rounded),
+                    )
+                  : const Icon(Symbols.mobile_3_rounded),
+              selectedIcon: updatableAppsCount > 0
+                  ? Badge.count(
+                      count: updatableAppsCount,
+                      child: const Icon(
+                        Symbols.mobile_3_rounded,
+                        fill: 1,
+                        weight: 600,
+                      ),
+                    )
+                  : const Icon(Symbols.mobile_3_rounded, fill: 1, weight: 600),
+              label: 'device'.tr(),
+            ),
+          ];
 
           return NavigationBar(
             selectedIndex: _currentIndex,

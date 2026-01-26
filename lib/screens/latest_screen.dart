@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -59,13 +60,13 @@ class _LatestScreenState extends State<LatestScreen>
 
   Widget _buildBody(LoadingState state, List<FDroidApp> apps, String? error) {
     if (state == LoadingState.loading && apps.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(year2023: false),
             SizedBox(height: 16),
-            Text('Loading latest apps...'),
+            Text('loading_latest_apps'.tr()),
           ],
         ),
       );
@@ -98,7 +99,7 @@ class _LatestScreenState extends State<LatestScreen>
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(Symbols.refresh),
-              label: const Text('Retry'),
+              label: Text('retry'.tr()),
             ),
           ],
         ),
@@ -106,13 +107,13 @@ class _LatestScreenState extends State<LatestScreen>
     }
 
     if (apps.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Symbols.apps, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('No apps found'),
+            const Icon(Symbols.apps, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text('no_apps_found'.tr()),
           ],
         ),
       );
@@ -120,7 +121,7 @@ class _LatestScreenState extends State<LatestScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Latest Apps'),
+        title: Text('latest_apps'.tr()),
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         surfaceTintColor: Theme.of(context).colorScheme.surfaceContainerLow,
       ),

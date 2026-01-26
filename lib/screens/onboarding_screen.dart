@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -227,7 +228,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Setup failed: $e'),
+          content: Text('${'setup_failed'.tr()}: $e'),
           action: SnackBarAction(label: 'Retry', onPressed: _performSetup),
         ),
       );

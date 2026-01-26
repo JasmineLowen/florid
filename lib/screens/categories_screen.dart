@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -56,13 +57,13 @@ class _CategoriesScreenState extends State<CategoriesScreen>
     String? error,
   ) {
     if (state == LoadingState.loading && categories.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(year2023: false),
-            SizedBox(height: 16),
-            Text('Loading categories...'),
+            const CircularProgressIndicator(year2023: false),
+            const SizedBox(height: 16),
+            Text('loading_categories'.tr()),
           ],
         ),
       );
@@ -95,7 +96,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(Symbols.refresh),
-              label: const Text('Retry'),
+              label: Text('retry'.tr()),
             ),
           ],
         ),
@@ -103,13 +104,13 @@ class _CategoriesScreenState extends State<CategoriesScreen>
     }
 
     if (categories.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Symbols.category, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('No categories found'),
+            const Icon(Symbols.category, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text('no_categories_found'.tr()),
           ],
         ),
       );

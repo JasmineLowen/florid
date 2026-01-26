@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:florid/utils/menu_actions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -202,13 +203,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Show loading
             if (state == LoadingState.loading) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircularProgressIndicator(year2023: false),
                     SizedBox(height: 16),
-                    Text('Searching...'),
+                    Text('searching'.tr()),
                   ],
                 ),
               );
@@ -242,7 +243,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ElevatedButton.icon(
                       onPressed: () => _performSearch(query),
                       icon: const Icon(Symbols.refresh),
-                      label: const Text('Retry'),
+                      label: Text('retry'.tr()),
                     ),
                   ],
                 ),

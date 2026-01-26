@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:florid/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -75,13 +76,13 @@ class _CategoryAppsScreenState extends State<CategoryAppsScreen> {
           final error = appProvider.categoryAppsError;
 
           if (state == LoadingState.loading && apps.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(year2023: false),
                   SizedBox(height: 16),
-                  Text('Loading apps...'),
+                  Text('loading_apps'.tr()),
                 ],
               ),
             );
@@ -114,7 +115,7 @@ class _CategoryAppsScreenState extends State<CategoryAppsScreen> {
                   ElevatedButton.icon(
                     onPressed: _loadData,
                     icon: const Icon(Symbols.refresh),
-                    label: const Text('Retry'),
+                    label: Text('retry'.tr()),
                   ),
                 ],
               ),
@@ -128,7 +129,7 @@ class _CategoryAppsScreenState extends State<CategoryAppsScreen> {
                 children: [
                   const Icon(Symbols.apps, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  Text('No apps found in ${widget.category}'),
+                  Text('no_apps_in_category'.tr(args: [widget.category])),
                 ],
               ),
             );

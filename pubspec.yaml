@@ -75,6 +75,9 @@ dependencies:
   flutter_native_splash: ^2.4.7
   flutter_animate: ^4.5.2
 
+  # Localization
+  easy_localization: ^3.0.8
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -102,6 +105,7 @@ flutter:
     - assets/Foreground.png
     - assets/Splash.png
     - assets/repositories.json
+    - assets/translations/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

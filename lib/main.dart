@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:florid/providers/settings_provider.dart';
 import 'package:florid/screens/florid_app.dart';
 import 'package:florid/themes/app_themes.dart';
@@ -17,11 +18,19 @@ import 'services/izzy_stats_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
 
   // Initialize notification service and request permission
   // await NotificationService().init();
 
-  runApp(const MainApp());
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      child: const MainApp(),
+    ),
+  );
 }
 
 class MainApp extends StatelessWidget {
@@ -88,6 +97,9 @@ class MainApp extends StatelessWidget {
           return MaterialApp(
             title: 'Florid - F-Droid Client',
             debugShowCheckedModeBanner: false,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
             theme: settings.themeStyle == ThemeStyle.florid
                 ? AppThemes.floridLightTheme()
                 : AppThemes.materialLightTheme(),
