@@ -150,19 +150,11 @@ class _HomeScreenState extends State<HomeScreen>
                             final app = recentlyUpdatedApps[index];
                             return AppListItem(
                               app: app,
-                              onTap: () async {
-                                final screenshots = await context
-                                    .read<AppProvider>()
-                                    .getScreenshots(app.packageName);
-                                if (!context.mounted) return;
+                              onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (context) => AppDetailsScreen(
-                                      app: app,
-                                      screenshots: screenshots.isNotEmpty
-                                          ? screenshots
-                                          : null,
-                                    ),
+                                    builder: (context) =>
+                                        AppDetailsScreen(app: app),
                                   ),
                                 );
                               },
@@ -235,19 +227,11 @@ class _HomeScreenState extends State<HomeScreen>
                           final app = latestApps[index];
                           return AppListItem(
                             app: app,
-                            onTap: () async {
-                              final screenshots = await context
-                                  .read<AppProvider>()
-                                  .getScreenshots(app.packageName);
-                              if (!context.mounted) return;
+                            onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => AppDetailsScreen(
-                                    app: app,
-                                    screenshots: screenshots.isNotEmpty
-                                        ? screenshots
-                                        : null,
-                                  ),
+                                  builder: (context) =>
+                                      AppDetailsScreen(app: app),
                                 ),
                               );
                             },

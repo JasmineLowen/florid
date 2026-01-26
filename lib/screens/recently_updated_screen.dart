@@ -137,16 +137,11 @@ class _RecentlyUpdatedScreenState extends State<RecentlyUpdatedScreen>
             final app = apps[index];
             return AppListItem(
               app: app,
-              onTap: () async {
-                final screenshots = await context
-                    .read<AppProvider>()
-                    .getScreenshots(app.packageName);
-                if (!context.mounted) return;
+              onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => AppDetailsScreen(
                       app: app,
-                      screenshots: screenshots.isNotEmpty ? screenshots : null,
                     ),
                   ),
                 );

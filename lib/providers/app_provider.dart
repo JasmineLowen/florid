@@ -495,7 +495,13 @@ class AppProvider extends ChangeNotifier {
   }
 
   /// Gets screenshots for an app package
-  Future<List<String>> getScreenshots(String packageName) async {
-    return await _apiService.getScreenshots(packageName);
+  Future<List<String>> getScreenshots(
+    String packageName, {
+    String? repositoryUrl,
+  }) async {
+    return await _apiService.getScreenshots(
+      packageName,
+      repositoryUrl: repositoryUrl,
+    );
   }
 }

@@ -75,7 +75,7 @@ class _CategoryAppsScreenState extends State<CategoryAppsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(year2023: false,),
+                  CircularProgressIndicator(year2023: false),
                   SizedBox(height: 16),
                   Text('Loading apps...'),
                 ],
@@ -141,19 +141,10 @@ class _CategoryAppsScreenState extends State<CategoryAppsScreen> {
                   app: app,
                   showCategory:
                       false, // Don't show category since we're already in a category
-                  onTap: () async {
-                    final screenshots = await context
-                        .read<AppProvider>()
-                        .getScreenshots(app.packageName);
-                    if (!context.mounted) return;
+                  onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => AppDetailsScreen(
-                          app: app,
-                          screenshots: screenshots.isNotEmpty
-                              ? screenshots
-                              : null,
-                        ),
+                        builder: (context) => AppDetailsScreen(app: app),
                       ),
                     );
                   },

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:florid/screens/permissions_screen.dart';
+import 'package:florid/widgets/m_list.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,13 +12,28 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/fdroid_app.dart';
 import '../providers/app_provider.dart';
 import '../providers/download_provider.dart';
-import 'permissions_screen.dart';
 
-class AppDetailsScreen extends StatelessWidget {
+class AppDetailsScreen extends StatefulWidget {
   final FDroidApp app;
-  final List<String>? screenshots;
 
-  const AppDetailsScreen({super.key, required this.app, this.screenshots});
+  const AppDetailsScreen({super.key, required this.app});
+
+  @override
+  State<AppDetailsScreen> createState() => _AppDetailsScreenState();
+}
+
+class _AppDetailsScreenState extends State<AppDetailsScreen> {
+  late Future<List<String>> _screenshotsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch screenshots in the background
+    _screenshotsFuture = context.read<AppProvider>().getScreenshots(
+      widget.app.packageName,
+      repositoryUrl: widget.app.repositoryUrl,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,22 +73,15 @@ class AppDetailsScreen extends StatelessWidget {
                           height: 24,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: _AppDetailsIcon(app: app),
+                            child: _AppDetailsIcon(app: widget.app),
                           ),
                         ),
                         Expanded(
                           child: Text(
-                            app.name,
+                            widget.app.name,
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
@@ -92,7 +102,7 @@ class AppDetailsScreen extends StatelessWidget {
                 icon: const Icon(Symbols.share),
                 onPressed: () {
                   Share.share(
-                    'Check out ${app.name} on F-Droid: https://f-droid.org/packages/${app.packageName}/',
+                    'Check out ${widget.app.name} on F-Droid: https://f-droid.org/packages/${widget.app.packageName}/',
                   );
                 },
               ),
@@ -100,24 +110,24 @@ class AppDetailsScreen extends StatelessWidget {
                 onSelected: (value) async {
                   switch (value) {
                     case 'website':
-                      if (app.webSite != null) {
-                        await launchUrl(Uri.parse(app.webSite!));
+                      if (widget.app.webSite != null) {
+                        await launchUrl(Uri.parse(widget.app.webSite!));
                       }
                       break;
                     case 'source':
-                      if (app.sourceCode != null) {
-                        await launchUrl(Uri.parse(app.sourceCode!));
+                      if (widget.app.sourceCode != null) {
+                        await launchUrl(Uri.parse(widget.app.sourceCode!));
                       }
                       break;
                     case 'issues':
-                      if (app.issueTracker != null) {
-                        await launchUrl(Uri.parse(app.issueTracker!));
+                      if (widget.app.issueTracker != null) {
+                        await launchUrl(Uri.parse(widget.app.issueTracker!));
                       }
                       break;
                   }
                 },
                 itemBuilder: (context) => [
-                  if (app.webSite != null)
+                  if (widget.app.webSite != null)
                     const PopupMenuItem(
                       value: 'website',
                       child: ListTile(
@@ -126,7 +136,7 @@ class AppDetailsScreen extends StatelessWidget {
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
-                  if (app.sourceCode != null)
+                  if (widget.app.sourceCode != null)
                     const PopupMenuItem(
                       value: 'source',
                       child: ListTile(
@@ -135,7 +145,7 @@ class AppDetailsScreen extends StatelessWidget {
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
-                  if (app.issueTracker != null)
+                  if (widget.app.issueTracker != null)
                     const PopupMenuItem(
                       value: 'issues',
                       child: ListTile(
@@ -149,183 +159,165 @@ class AppDetailsScreen extends StatelessWidget {
             ],
           ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 16,
-                children: [
-                  // App info header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Consumer<AppProvider>(
-                      builder: (context, appProvider, _) {
-                        final isInstalled = appProvider.isAppInstalled(
-                          app.packageName,
-                        );
-                        final installedApp = appProvider.getInstalledApp(
-                          app.packageName,
-                        );
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 16,
+              children: [
+                // App info header
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 16,
+                  ),
+                  child: Consumer<AppProvider>(
+                    builder: (context, appProvider, _) {
+                      final isInstalled = appProvider.isAppInstalled(
+                        widget.app.packageName,
+                      );
+                      final installedApp = appProvider.getInstalledApp(
+                        widget.app.packageName,
+                      );
 
-                        return Column(
-                          spacing: 16,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      return Column(
+                        spacing: 16,
+                        crossAxisAlignment: CrossAxisAlignment.start,
 
-                          children: [
-                            Row(
-                              spacing: 8,
-                              children: [
-                                Hero(
-                                  tag: 'app-icon-${app.packageName}',
-                                  child: Material(
-                                    child: SizedBox(
-                                      width: 100,
-                                      height: 100,
+                        children: [
+                          Row(
+                            spacing: 8,
+                            children: [
+                              Hero(
+                                tag: 'app-icon-${widget.app.packageName}',
+                                child: Material(
+                                  child: SizedBox(
+                                    width: 100,
+                                    height: 100,
 
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: _AppDetailsIcon(app: app),
-                                      ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: _AppDetailsIcon(app: widget.app),
                                     ),
                                   ),
                                 ),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    spacing: 4,
-                                    children: [
-                                      Text(
-                                        app.name,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleLarge,
-                                      ),
-                                      Text(
-                                        'by ${app.authorName ?? 'Unknown'}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
-                                            ),
-                                      ),
-                                      if (isInstalled)
-                                        Chip(
-                                          visualDensity: VisualDensity.compact,
-                                          avatar: Icon(
-                                            Symbols.check_circle,
-                                            fill: 1,
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.max,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  spacing: 4,
+                                  children: [
+                                    Text(
+                                      widget.app.name,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge,
+                                    ),
+                                    Text(
+                                      'by ${widget.app.authorName ?? 'Unknown'}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
                                           ),
-                                          label: Text(
-                                            'Installed${installedApp?.versionName != null ? ' (${installedApp!.versionName})' : ''}',
-                                          ),
+                                    ),
+                                    if (isInstalled)
+                                      Chip(
+                                        visualDensity: VisualDensity.compact,
+                                        avatar: Icon(
+                                          Symbols.check_circle,
+                                          fill: 1,
                                         ),
-                                    ],
-                                  ),
+                                        label: Text(
+                                          'Installed${installedApp?.versionName != null ? ' (${installedApp!.versionName})' : ''}',
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
 
-                            _DownloadSection(app: app),
-                          ],
-                        );
-                      },
+                          _DownloadSection(app: widget.app),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+
+                // Screenshots section
+                FutureBuilder<List<String>>(
+                  future: _screenshotsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final screenshots = snapshot.data ?? [];
+                    if (screenshots.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return _ScreenshotsSection(
+                      app: widget.app,
+                      screenshots: screenshots,
+                    );
+                  },
+                ),
+
+                if (widget.app.categories?.isNotEmpty == true) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Chip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text(widget.app.categories!.first),
                     ),
                   ),
-
-                  // Screenshots section
-                  if (screenshots?.isNotEmpty == true)
-                    _ScreenshotsSection(screenshots: screenshots!)
-                  else
-                    const SizedBox.shrink(),
-
-                  if (app.categories?.isNotEmpty == true) ...[
-                    Chip(
-                      visualDensity: VisualDensity.compact,
-                      label: Text(app.categories!.first),
-                    ),
-                  ],
-                  // Description
-                  _DescriptionSection(app: app),
-                  Divider(),
-
-                  // Download section
-                  // _DownloadSection(app: app),
-
-                  // App details
-                  _AppInfoSection(app: app),
-                  Divider(),
-
-                  // Version info
-                  if (app.latestVersion != null)
-                    _VersionInfoSection(version: app.latestVersion!)
-                  else
-                    const _NoVersionInfoSection(),
-                  if (app.latestVersion != null) Divider(),
-                  // All versions history
-                  if (app.packages != null && app.packages!.isNotEmpty)
-                    _AllVersionsSection(app: app)
-                  else
-                    const SizedBox.shrink(),
-                  if (app.packages != null && app.packages!.isNotEmpty)
-                    Divider(),
-                  // Permissions section
-                  if (app.latestVersion?.permissions?.isNotEmpty == true)
-                    ListTile(
-                      leading: Icon(
-                        Symbols.security,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      title: Text(
-                        'Permissions (${app.latestVersion!.permissions!.length})',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      trailing: const Icon(Symbols.arrow_forward),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PermissionsScreen(
-                              permissions: app.latestVersion!.permissions!,
-                              appName: app.name,
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  else
-                    const SizedBox.shrink(),
-
-                  if (app.latestVersion?.permissions?.isNotEmpty == true)
-                    Divider(),
-
-                  const SizedBox(height: 24),
                 ],
-              ),
+                // Description
+                _DescriptionSection(app: widget.app),
+                // Divider(),
+
+                // Download section
+                // _DownloadSection(app: app),
+
+                // App details
+                _AppInfoSection(app: widget.app),
+
+                // Version info
+                if (widget.app.latestVersion != null)
+                  _VersionInfoSection(version: widget.app.latestVersion!)
+                else
+                  const _NoVersionInfoSection(),
+                // All versions history
+                if (widget.app.packages != null &&
+                    widget.app.packages!.isNotEmpty)
+                  _AllVersionsSection(app: widget.app)
+                else
+                  const SizedBox.shrink(),
+                // Permissions
+              ],
             ),
           ),
         ],
       ),
-      bottomNavigationBar: app.latestVersion == null
+      bottomNavigationBar: widget.app.latestVersion == null
           ? null
           : BottomAppBar(
               child: Consumer2<DownloadProvider, AppProvider>(
                 builder: (context, downloadProvider, appProvider, child) {
-                  final version = app.latestVersion!;
+                  final version = widget.app.latestVersion!;
                   final isInstalled = appProvider.isAppInstalled(
-                    app.packageName,
+                    widget.app.packageName,
                   );
                   final installedApp = appProvider.getInstalledApp(
-                    app.packageName,
+                    widget.app.packageName,
                   );
                   final downloadInfo = downloadProvider.getDownloadInfo(
-                    app.packageName,
+                    widget.app.packageName,
                     version.versionName,
                   );
                   final isDownloading =
@@ -348,7 +340,7 @@ class AppDetailsScreen extends StatelessWidget {
                       child: FilledButton.tonal(
                         onPressed: () {
                           downloadProvider.cancelDownload(
-                            app.packageName,
+                            widget.app.packageName,
                             version.versionName,
                           );
                         },
@@ -368,7 +360,7 @@ class AppDetailsScreen extends StatelessWidget {
                               onPressed: () async {
                                 try {
                                   await downloadProvider.uninstallApp(
-                                    app.packageName,
+                                    widget.app.packageName,
                                   );
                                   await Future.delayed(
                                     const Duration(seconds: 1),
@@ -406,12 +398,12 @@ class AppDetailsScreen extends StatelessWidget {
                               onPressed: () async {
                                 try {
                                   final opened = await appProvider
-                                      .openInstalledApp(app.packageName);
+                                      .openInstalledApp(widget.app.packageName);
                                   if (!opened && context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          'Unable to open ${app.name}.',
+                                          'Unable to open ${widget.app.name}.',
                                         ),
                                       ),
                                     );
@@ -446,7 +438,7 @@ class AppDetailsScreen extends StatelessWidget {
                           try {
                             final downloadInfo = downloadProvider
                                 .getDownloadInfo(
-                                  app.packageName,
+                                  widget.app.packageName,
                                   version.versionName,
                                 );
                             if (downloadInfo?.filePath != null) {
@@ -476,7 +468,7 @@ class AppDetailsScreen extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      '${app.name} installation started!',
+                                      '${widget.app.name} installation started!',
                                     ),
                                   ),
                                 );
@@ -535,7 +527,7 @@ class AppDetailsScreen extends StatelessWidget {
                           }
 
                           try {
-                            await downloadProvider.downloadApk(app);
+                            await downloadProvider.downloadApk(widget.app);
 
                             if (context.mounted) {
                               for (int i = 0; i < 15; i++) {
@@ -544,12 +536,12 @@ class AppDetailsScreen extends StatelessWidget {
                                 );
                                 await appProvider.fetchInstalledApps();
                                 if (appProvider.isAppInstalled(
-                                  app.packageName,
+                                  widget.app.packageName,
                                 )) {
                                   final downloadInfo = downloadProvider
                                       .getDownloadInfo(
-                                        app.packageName,
-                                        app.latestVersion!.versionName,
+                                        widget.app.packageName,
+                                        widget.app.latestVersion!.versionName,
                                       );
                                   if (downloadInfo?.filePath != null) {
                                     await downloadProvider.deleteDownloadedFile(
@@ -834,18 +826,70 @@ class _AppInfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'App Information',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        MListHeader(title: 'App Information'),
+        MListView(
+          items: [
+            MListItemData(
+              leading: Icon(
+                Symbols.package_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: 'Package Name',
+              subtitle: app.packageName,
+              onTap: () {},
+            ),
+            MListItemData(
+              leading: Icon(
+                Symbols.license_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: 'License',
+              subtitle: app.license,
+              onTap: () {},
+            ),
+            if (app.added != null)
+              MListItemData(
+                leading: Icon(
+                  Symbols.add,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: 'Added',
+                subtitle: _formatDate(app.added!),
+                onTap: () {},
+              ),
+            if (app.added != null)
+              MListItemData(
+                leading: Icon(
+                  Symbols.update,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: 'Last Updated',
+                subtitle: _formatDate(app.lastUpdated!),
+                onTap: () {},
+              ),
+            if (app.latestVersion?.permissions?.isNotEmpty == true)
+              MListItemData(
+                leading: Icon(
+                  Symbols.security,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: 'Permissions ',
+                subtitle: '(${app.latestVersion!.permissions!.length})',
+                suffix: Icon(Symbols.arrow_forward),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PermissionsScreen(
+                        permissions: app.latestVersion!.permissions!,
+                        appName: app.name,
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
         ),
-        const SizedBox(height: 12),
-        _InfoRow('Package Name', app.packageName),
-        _InfoRow('License', app.license),
-        if (app.added != null) _InfoRow('Added', _formatDate(app.added!)),
-        if (app.lastUpdated != null)
-          _InfoRow('Last Updated', _formatDate(app.lastUpdated!)),
       ],
     );
   }
@@ -901,57 +945,60 @@ class _DescriptionSectionState extends State<_DescriptionSection>
     textPainter.layout(maxWidth: MediaQuery.of(context).size.width - 32);
     final isOverflowing = textPainter.didExceedMaxLines;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 8,
-      children: [
-        Text(
-          'Description',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        Stack(
-          children: [
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              child: Text(
-                description,
-                style: Theme.of(context).textTheme.bodyMedium,
-                maxLines: maxLines,
-                overflow: _isExpanded
-                    ? TextOverflow.visible
-                    : TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        if (isOverflowing)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 300),
-              style: Theme.of(context).textTheme.labelMedium!.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-              child: TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isExpanded = !_isExpanded;
-                    if (_isExpanded) {
-                      _animationController.forward();
-                    } else {
-                      _animationController.reverse();
-                    }
-                  });
-                },
-                child: Text(_isExpanded ? 'Show less' : 'Show more'),
-              ),
-            ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 8,
+        children: [
+          Text(
+            'Description',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
-      ],
+          Stack(
+            children: [
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: Text(
+                  description,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  maxLines: maxLines,
+                  overflow: _isExpanded
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          if (isOverflowing)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 300),
+                style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                      if (_isExpanded) {
+                        _animationController.forward();
+                      } else {
+                        _animationController.reverse();
+                      }
+                    });
+                  },
+                  child: Text(_isExpanded ? 'Show less' : 'Show more'),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -966,27 +1013,40 @@ class _VersionInfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Version Information',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        MListHeader(title: 'Version Information'),
+        MListView(
+          items: [
+            MListItemData(
+              title: 'Version Name',
+              subtitle: version.versionName,
+              onTap: () {},
+            ),
+            MListItemData(
+              title: 'Version Code',
+              subtitle: version.versionCode.toString(),
+              onTap: () {},
+            ),
+            MListItemData(
+              title: 'Size',
+              subtitle: version.sizeString,
+              onTap: () {},
+            ),
+            if (version.minSdkVersion != null)
+              MListItemData(
+                title: 'Min SDK',
+                subtitle: version.minSdkVersion!,
+                onTap: () {},
+              ),
+            if (version.targetSdkVersion != null)
+              MListItemData(
+                title: 'Target SDK',
+                subtitle: version.targetSdkVersion!,
+                onTap: () {},
+              ),
+          ],
         ),
-        const SizedBox(height: 12),
-        _InfoRow('Version Name', version.versionName),
-        _InfoRow('Version Code', version.versionCode.toString()),
-        _InfoRow('Size', version.sizeString),
-        if (version.minSdkVersion != null)
-          _InfoRow('Min SDK', version.minSdkVersion!),
-        if (version.targetSdkVersion != null)
-          _InfoRow('Target SDK', version.targetSdkVersion!),
-        _InfoRow('Added', _formatDate(version.added)),
       ],
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 }
 
@@ -995,78 +1055,49 @@ class _NoVersionInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Version Information',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                Symbols.info,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                size: 32,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'No Version Information Available',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'This app doesn\'t have detailed version information in the F-Droid repository.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
+          Text(
+            'Version Information',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
-          Expanded(
-            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Symbols.info,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 32,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'No Version Information Available',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'This app doesn\'t have detailed version information in the F-Droid repository.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1180,99 +1211,103 @@ class _AllVersionsSection extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8.0,
       children: [
-        Text(
-          'All Versions',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        ...versions.map((version) {
-          final isLatest = version == versions.first;
+        MListHeader(title: 'All Versions'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            children: [
+              ...versions.map((version) {
+                final isLatest = version == versions.first;
 
-          return Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 4),
-            decoration: BoxDecoration(
-              color: isLatest
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(16),
-              border: isLatest
-                  ? Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 1,
-                    )
-                  : null,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 4),
+                  decoration: BoxDecoration(
+                    color: isLatest
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context).colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
+                    border: isLatest
+                        ? Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 1,
+                          )
+                        : null,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  version.versionName,
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  'Code: ${version.versionCode}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isLatest)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Latest',
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
+                                    ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
                         children: [
                           Text(
-                            version.versionName,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                            'Size: ${version.sizeString}',
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
+                          const SizedBox(width: 16),
                           Text(
-                            'Code: ${version.versionCode}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
+                            'Released: ${_formatDate(version.added)}',
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
-                    ),
-                    if (isLatest)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Latest',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      'Size: ${version.sizeString}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      'Released: ${_formatDate(version.added)}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _VersionDownloadButton(app: app, version: version),
-              ],
-            ),
-          );
-        }),
+                      const SizedBox(height: 12),
+                      _VersionDownloadButton(app: app, version: version),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -1420,11 +1455,17 @@ class _VersionDownloadButton extends StatelessWidget {
   }
 }
 
-class _ScreenshotsSection extends StatelessWidget {
+class _ScreenshotsSection extends StatefulWidget {
+  final FDroidApp app;
   final List<String> screenshots;
 
-  const _ScreenshotsSection({required this.screenshots});
+  const _ScreenshotsSection({required this.app, required this.screenshots});
 
+  @override
+  State<_ScreenshotsSection> createState() => _ScreenshotsSectionState();
+}
+
+class _ScreenshotsSectionState extends State<_ScreenshotsSection> {
   String _getScreenshotUrl(String screenshot) {
     var path = screenshot.trim();
     while (path.startsWith('/')) {
@@ -1434,128 +1475,113 @@ class _ScreenshotsSection extends StatelessWidget {
     if (path.startsWith('http')) {
       return path;
     }
-    return 'https://f-droid.org/repo/$path';
+    return '${widget.app.repositoryUrl}/$path';
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('Screenshots Section - Count: ${screenshots.length}');
-    for (var i = 0; i < screenshots.length; i++) {
-      debugPrint('Screenshot $i: ${screenshots[i]}');
+    debugPrint('Screenshots Section - Count: ${widget.screenshots.length}');
+    for (var i = 0; i < widget.screenshots.length; i++) {
+      debugPrint('Screenshot $i: ${widget.screenshots[i]}');
     }
 
-    if (screenshots.isEmpty) {
+    if (widget.screenshots.isEmpty) {
       return const SizedBox.shrink();
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8.0,
       children: [
-        Text(
-          'Screenshots',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'Screenshots',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
         ),
-        const SizedBox(height: 12),
         SizedBox(
-          height: 300,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: screenshots.length,
-            itemBuilder: (context, index) {
-              final screenshot = screenshots[index];
-              final url = _getScreenshotUrl(screenshot);
-              debugPrint('Loading screenshot from URL: $url');
-
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: index != screenshots.length - 1 ? 12 : 0,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Material(
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => _FullScreenScreenshots(
-                              screenshots: screenshots,
-                              initialIndex: index,
-                            ),
-                          ),
-                        );
-                      },
-                      child: AspectRatio(
-                        aspectRatio: 9 / 16,
-                        child: Image.network(
-                          url,
-                          fit: BoxFit.cover,
-                          cacheWidth: 300,
-                          cacheHeight: 600,
-                          errorBuilder: (context, error, stackTrace) {
-                            debugPrint('Screenshot error: $error');
-                            debugPrint('StackTrace: $stackTrace');
-                            return Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainer,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Symbols.broken_image),
-                                  const SizedBox(height: 8),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'Failed to load',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainer,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const CircularProgressIndicator(
-                                    year2023: false,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0,
-                                    ),
-                                    child: Text(
-                                      '${(loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1) * 100).toInt()}%',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
+          height: 500,
+          child: CarouselView(
+            // flexWeights: const [2, 1],
+            itemExtent: 250,
+            shrinkExtent: 250,
+            onTap: (index) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => _FullScreenScreenshots(
+                    app: widget.app,
+                    screenshots: widget.screenshots,
+                    initialIndex: index,
                   ),
                 ),
               );
             },
+            children: widget.screenshots.asMap().entries.map((entry) {
+              final screenshot = entry.value;
+              final url = _getScreenshotUrl(screenshot);
+              debugPrint('Loading screenshot from URL: $url');
+
+              return Builder(
+                builder: (context) {
+                  return Material(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.fitWidth,
+                      errorBuilder: (context, error, stackTrace) {
+                        debugPrint('Screenshot error: $error');
+                        debugPrint('StackTrace: $stackTrace');
+                        return Container(
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Symbols.broken_image),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  'Failed to load',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const CircularProgressIndicator(year2023: false),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                ),
+                                child: Text(
+                                  '${(loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1) * 100).toInt()}%',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            }).toList(),
           ),
         ),
       ],
@@ -1564,10 +1590,12 @@ class _ScreenshotsSection extends StatelessWidget {
 }
 
 class _FullScreenScreenshots extends StatefulWidget {
+  final FDroidApp app;
   final List<String> screenshots;
   final int initialIndex;
 
   const _FullScreenScreenshots({
+    required this.app,
     required this.screenshots,
     required this.initialIndex,
   });
@@ -1598,7 +1626,11 @@ class _FullScreenScreenshotsState extends State<_FullScreenScreenshots> {
     while (path.startsWith('/')) {
       path = path.substring(1);
     }
-    return 'https://f-droid.org/repo/$path';
+    // Handle if already a full URL
+    if (path.startsWith('http')) {
+      return path;
+    }
+    return '${widget.app.repositoryUrl}/$path';
   }
 
   @override
@@ -1629,50 +1661,42 @@ class _FullScreenScreenshotsState extends State<_FullScreenScreenshots> {
         itemBuilder: (context, index) {
           final screenshot = widget.screenshots[index];
           return SafeArea(
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: 9 / 16,
-                child: Container(
-                  color: Colors.black,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      _getScreenshotUrl(screenshot),
-                      fit: BoxFit.cover,
-                      cacheWidth: 1080,
-                      cacheHeight: 1920,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[900],
-                          child: const Center(
-                            child: Icon(
-                              Symbols.broken_image,
-                              color: Colors.white,
-                              size: 48,
-                            ),
+            child: Container(
+              color: Colors.black,
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    _getScreenshotUrl(screenshot),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[900],
+                        child: const Center(
+                          child: Icon(
+                            Symbols.broken_image,
+                            color: Colors.white,
+                            size: 48,
                           ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            year2023: false,
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                : null,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          year2023: false,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.white,
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),

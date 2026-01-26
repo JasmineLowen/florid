@@ -23,8 +23,11 @@ class FDroidApiService {
   final DatabaseService _databaseService;
   String _userAgent = 'Florid';
 
-  /// Cache raw repository JSON for screenshot extraction
+  /// Cache raw repository JSON for screenshot extraction from the default repo
   Map<String, dynamic>? _cachedRawJson;
+
+  /// Cache for fetched repository indices by repository URL
+  final Map<String, Map<String, dynamic>> _repositoryIndexCache = {};
 
   FDroidApiService({
     http.Client? client,
@@ -720,30 +723,87 @@ class FDroidApiService {
     }
   }
 
-  /// Extracts screenshots for a specific app package from cached raw JSON
-  /// If the cache is not populated, fetches the repository first
-  Future<List<String>> getScreenshots(String packageName) async {
-    debugPrint('=== getScreenshots called for: $packageName ===');
+  /// Extracts screenshots for a specific app package from the specified repository
+  /// If repositoryUrl is provided, fetches from that repository's index
+  /// Otherwise uses the default cached repository
+  Future<List<String>> getScreenshots(
+    String packageName, {
+    String? repositoryUrl,
+  }) async {
+    debugPrint(
+      '=== getScreenshots called for: $packageName from $repositoryUrl ===',
+    );
 
-    // If cache is empty, fetch the repository first
-    if (_cachedRawJson == null) {
-      debugPrint('Cache is empty, fetching repository first...');
+    Map<String, dynamic>? jsonData;
+
+    // If a specific repository URL is provided, fetch from it
+    if (repositoryUrl != null) {
       try {
-        await fetchRepository();
+        // Ensure URL doesn't end with /repo/index-v2.json
+        var cleanUrl = repositoryUrl.endsWith('/')
+            ? repositoryUrl.substring(0, repositoryUrl.length - 1)
+            : repositoryUrl;
+
+        // Handle various URL formats
+        if (cleanUrl.endsWith('/index-v2.json')) {
+          cleanUrl = cleanUrl.substring(
+            0,
+            cleanUrl.length - '/index-v2.json'.length,
+          );
+        }
+
+        final indexUrl = cleanUrl.endsWith('/repo')
+            ? '$cleanUrl/index-v2.json'
+            : '$cleanUrl/repo/index-v2.json';
+
+        // Check if we have this repository cached
+        if (_repositoryIndexCache.containsKey(indexUrl)) {
+          debugPrint('Using cached repository index from: $indexUrl');
+          jsonData = _repositoryIndexCache[indexUrl];
+        } else {
+          debugPrint('Fetching screenshots index from: $indexUrl');
+          final response = await _client.get(Uri.parse(indexUrl));
+
+          if (response.statusCode == 200) {
+            jsonData = json.decode(response.body) as Map<String, dynamic>;
+            // Cache the fetched index for future use
+            _repositoryIndexCache[indexUrl] = jsonData;
+            debugPrint(
+              'Successfully fetched and cached repository index from $repositoryUrl',
+            );
+          } else {
+            debugPrint(
+              'Failed to fetch from $repositoryUrl: ${response.statusCode}',
+            );
+            return [];
+          }
+        }
       } catch (e) {
-        debugPrint('Error fetching repository: $e');
+        debugPrint('Error fetching repository $repositoryUrl: $e');
         return [];
       }
-    }
+    } else {
+      // Use cached default repository
+      if (_cachedRawJson == null) {
+        debugPrint('Cache is empty, fetching default repository first...');
+        try {
+          await fetchRepository();
+        } catch (e) {
+          debugPrint('Error fetching default repository: $e');
+          return [];
+        }
+      }
 
-    if (_cachedRawJson == null) {
-      debugPrint('_cachedRawJson is still null after fetch!');
-      return [];
+      if (_cachedRawJson == null) {
+        debugPrint('_cachedRawJson is still null after fetch!');
+        return [];
+      }
+
+      jsonData = _cachedRawJson;
     }
 
     try {
-      final packages = (_cachedRawJson!['packages'] as Map?)
-          ?.cast<String, dynamic>();
+      final packages = (jsonData!['packages'] as Map?)?.cast<String, dynamic>();
       if (packages == null) {
         debugPrint('packages is null!');
         return [];
