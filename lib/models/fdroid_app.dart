@@ -112,6 +112,35 @@ class FDroidApp {
     return versions.first;
   }
 
+  /// Creates a copy of this app with a specific version set as the latest
+  FDroidApp copyWithVersion(FDroidVersion version) {
+    return FDroidApp(
+      packageName: packageName,
+      name: name,
+      summary: summary,
+      description: description,
+      icon: icon,
+      authorName: authorName,
+      authorEmail: authorEmail,
+      authorWebSite: authorWebSite,
+      webSite: webSite,
+      issueTracker: issueTracker,
+      sourceCode: sourceCode,
+      changelog: changelog,
+      donate: donate,
+      bitcoin: bitcoin,
+      flattrID: flattrID,
+      license: license,
+      categories: categories,
+      packages: {version.versionCode.toString(): version},
+      suggestedVersionName: suggestedVersionName,
+      suggestedVersionCode: suggestedVersionCode,
+      added: added,
+      lastUpdated: lastUpdated,
+      repositoryUrl: repositoryUrl,
+    );
+  }
+
   FDroidApp copyWith({
     String? packageName,
     String? name,

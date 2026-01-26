@@ -645,29 +645,13 @@ class _DownloadSectionState extends State<_DownloadSection> {
     return Consumer2<DownloadProvider, AppProvider>(
       builder: (context, downloadProvider, appProvider, child) {
         final version = widget.app.latestVersion!;
-        final isInstalled = appProvider.isAppInstalled(widget.app.packageName);
-        final installedApp = appProvider.getInstalledApp(
-          widget.app.packageName,
-        );
         final downloadInfo = downloadProvider.getDownloadInfo(
           widget.app.packageName,
           version.versionName,
         );
         final isDownloading =
             downloadInfo?.status == DownloadStatus.downloading;
-        final isCancelled = downloadInfo?.status == DownloadStatus.cancelled;
 
-        // Check if file actually exists on disk (not just marked as completed)
-        // Use FutureBuilder to handle async file existence check
-        final fileExists = downloadInfo?.filePath != null
-            ? File(downloadInfo!.filePath!).existsSync()
-            : false;
-
-        final isDownloaded =
-            downloadInfo?.status == DownloadStatus.completed &&
-            downloadInfo?.filePath != null &&
-            !isCancelled &&
-            fileExists;
         final progress = downloadProvider.getProgress(
           widget.app.packageName,
           version.versionName,
@@ -884,7 +868,6 @@ class _DescriptionSectionState extends State<_DescriptionSection>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _animationController;
-  late Animation<double> _heightAnimation;
 
   @override
   void initState() {
@@ -1197,7 +1180,6 @@ class _AllVersionsSection extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-
       children: [
         Text(
           'All Versions',
@@ -1285,6 +1267,8 @@ class _AllVersionsSection extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                _VersionDownloadButton(app: app, version: version),
               ],
             ),
           );
@@ -1295,6 +1279,144 @@ class _AllVersionsSection extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class _VersionDownloadButton extends StatelessWidget {
+  final FDroidApp app;
+  final FDroidVersion version;
+
+  const _VersionDownloadButton({required this.app, required this.version});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<DownloadProvider, AppProvider>(
+      builder: (context, downloadProvider, appProvider, child) {
+        final downloadInfo = downloadProvider.getDownloadInfo(
+          app.packageName,
+          version.versionName,
+        );
+        final isDownloading =
+            downloadInfo?.status == DownloadStatus.downloading;
+        final isCancelled = downloadInfo?.status == DownloadStatus.cancelled;
+        final fileExists = downloadInfo?.filePath != null
+            ? File(downloadInfo!.filePath!).existsSync()
+            : false;
+        final isDownloaded =
+            downloadInfo?.status == DownloadStatus.completed &&
+            downloadInfo?.filePath != null &&
+            !isCancelled &&
+            fileExists;
+        final progress = downloadProvider.getProgress(
+          app.packageName,
+          version.versionName,
+        );
+
+        if (isDownloading) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Downloading... ${(progress * 100).toInt()}%',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      downloadProvider.cancelDownload(
+                        app.packageName,
+                        version.versionName,
+                      );
+                    },
+                    icon: const Icon(Symbols.close, size: 18),
+                    label: const Text('Cancel'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(value: progress, year2023: false),
+            ],
+          );
+        }
+
+        if (isDownloaded) {
+          return FilledButton.icon(
+            onPressed: () async {
+              final hasPermission = await downloadProvider
+                  .requestInstallPermission();
+              if (!hasPermission) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Install permission is required'),
+                    ),
+                  );
+                }
+                return;
+              }
+
+              try {
+                if (downloadInfo.filePath != null) {
+                  await downloadProvider.installApk(downloadInfo.filePath!);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Installing ${app.name}...')),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Installation failed: $e')),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Symbols.install_mobile, size: 18),
+            label: const Text('Install'),
+          );
+        }
+
+        return FilledButton.tonalIcon(
+          onPressed: () async {
+            final hasPermission = await downloadProvider.requestPermissions();
+            if (!hasPermission) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Storage permission is required'),
+                  ),
+                );
+              }
+              return;
+            }
+
+            try {
+              await downloadProvider.downloadApk(app.copyWithVersion(version));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Downloading ${version.versionName}...'),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+              }
+            }
+          },
+          icon: const Icon(Symbols.download, size: 18),
+          label: const Text('Download'),
+        );
+      },
+    );
   }
 }
 
