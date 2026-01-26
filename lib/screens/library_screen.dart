@@ -3,7 +3,6 @@ import 'package:florid/providers/repositories_provider.dart';
 import 'package:florid/screens/categories_screen.dart';
 import 'package:florid/screens/home_screen.dart';
 import 'package:florid/utils/menu_actions.dart';
-import 'package:florid/widgets/tabbar.dart';
 import 'package:florid/widgets/theme_aware_tabbar.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
@@ -83,7 +82,7 @@ class _LibraryScreenState extends State<LibraryScreen>
             ],
           ),
         ],
-        bottom: ThemeAwareTabBar(
+        bottom: FTabBar(
           controller: _tabController,
           onTabChanged: (index) {
             _tabController.animateTo(index);

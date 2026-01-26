@@ -1,12 +1,11 @@
 import 'package:florid/providers/settings_provider.dart';
-import 'package:florid/widgets/tabbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 /// Theme-aware TabBar using Flutter's built-in TabBar.
 /// Switches styling based on user's selected theme (Material or Florid).
-class ThemeAwareTabBar extends StatelessWidget implements PreferredSizeWidget {
-  const ThemeAwareTabBar({
+class FTabBar extends StatelessWidget implements PreferredSizeWidget {
+  const FTabBar({
     super.key,
     required this.items,
     required this.onTabChanged,
@@ -81,4 +80,11 @@ class ThemeAwareTabBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
+}
+
+class FloridTabBarItem {
+  const FloridTabBarItem({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
 }
