@@ -6,9 +6,12 @@ Browse, search, and install open‑source Android apps from the F‑Droid reposi
 
 </div>
 
-<div align="center" style="margin-top:8px; margin-bottom:16px;">
+<div align="center">
 	<a href="https://github.com/Nandanrmenon/florid/releases/latest">
-		<img src="https://img.shields.io/github/v/release/Nandanrmenon/florid?label=Latest%20release&logo=github" alt="Latest release" />
+		<img src="https://img.shields.io/github/v/release/Nandanrmenon/florid?label=Latest%20release&logo=github&style=for-the-badge" alt="Latest release" />
+	</a>
+	<a href="https://apt.izzysoft.de/packages/com.nahnah.florid">
+		<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" alt="Get it at IzzyOnDroid" height="50"/>
 	</a>
 </div>
 
