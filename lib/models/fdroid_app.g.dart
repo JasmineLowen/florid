@@ -84,6 +84,7 @@ FDroidVersion _$FDroidVersionFromJson(Map<String, dynamic> json) =>
       nativecode: (json['nativecode'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      whatsNew: json['whatsNew'] as String?,
     );
 
 Map<String, dynamic> _$FDroidVersionToJson(FDroidVersion instance) =>
@@ -102,6 +103,7 @@ Map<String, dynamic> _$FDroidVersionToJson(FDroidVersion instance) =>
       'permissions': instance.permissions,
       'features': instance.features,
       'nativecode': instance.nativecode,
+      'whatsNew': instance.whatsNew,
     };
 
 FDroidCategory _$FDroidCategoryFromJson(Map<String, dynamic> json) =>

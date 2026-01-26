@@ -1,4 +1,5 @@
 import 'package:florid/utils/menu_actions.dart';
+import 'package:florid/widgets/changelog_preview.dart';
 import 'package:florid/widgets/f_tabbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -426,6 +427,19 @@ class _UpdatesScreenState extends State<UpdatesScreen>
                                             ),
                                       ),
                                     ],
+                                  ),
+                                ),
+                              if (app.latestVersion?.whatsNew != null &&
+                                  app.latestVersion!.whatsNew!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    12,
+                                  ),
+                                  child: ChangelogPreview(
+                                    text: app.latestVersion!.whatsNew,
                                   ),
                                 ),
                             ],

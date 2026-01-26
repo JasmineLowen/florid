@@ -7,7 +7,7 @@ import '../models/fdroid_app.dart';
 
 class DatabaseService {
   static const String _databaseName = 'fdroid_repository.db';
-  static const int _databaseVersion = 3;
+  static const int _databaseVersion = 4;
 
   // Table names
   static const String _appsTable = 'apps';
@@ -107,6 +107,7 @@ class DatabaseService {
         permissions TEXT,
         features TEXT,
         nativecode TEXT,
+        whats_new TEXT,
         FOREIGN KEY (package_name) REFERENCES $_appsTable (package_name) ON DELETE CASCADE,
         UNIQUE (package_name, version_code)
       )
@@ -162,6 +163,16 @@ class DatabaseService {
       // Add repository_id column to apps table for v2 to v3 upgrade
       await db.execute(
         'ALTER TABLE $_appsTable ADD COLUMN repository_id INTEGER',
+      );
+    }
+    if (oldVersion < 4) {
+      // Add whats_new column to versions table for v3 to v4 upgrade
+      await db.execute('ALTER TABLE $_versionsTable ADD COLUMN whats_new TEXT');
+      // Force re-sync so new field is populated from repository
+      await db.delete(
+        _metadataTable,
+        where: 'key = ?',
+        whereArgs: ['last_sync'],
       );
     }
   }
@@ -331,6 +342,7 @@ class DatabaseService {
             'nativecode': version.nativecode != null
                 ? jsonEncode(version.nativecode)
                 : null,
+            'whats_new': version.whatsNew,
           }, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       }
@@ -825,6 +837,7 @@ class DatabaseService {
         nativecode: versionMap['nativecode'] != null
             ? List<String>.from(jsonDecode(versionMap['nativecode'] as String))
             : null,
+        whatsNew: versionMap['whats_new'] as String?,
       );
       packages[version.versionCode.toString()] = version;
     }

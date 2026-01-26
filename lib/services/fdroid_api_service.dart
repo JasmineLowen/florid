@@ -723,6 +723,75 @@ class FDroidApiService {
     }
   }
 
+  /// Fetches changelog text from a repository-relative or absolute URL.
+  /// Returns plain text. If the server responds with HTML, tags are stripped.
+  Future<String?> fetchChangelogText(
+    String? changelogPath, {
+    String? repositoryUrl,
+  }) async {
+    if (changelogPath == null || changelogPath.isEmpty) return null;
+
+    final base = repositoryUrl ?? baseUrl ?? 'https://f-droid.org';
+    final resolved = changelogPath.startsWith('http')
+        ? changelogPath
+        : '$base/${changelogPath.startsWith('/') ? changelogPath.substring(1) : changelogPath}';
+
+    try {
+      final resp = await _client.get(
+        Uri.parse(resolved),
+        headers: {
+          'User-Agent': _userAgent,
+          'Accept': 'text/plain, text/markdown, */*',
+        },
+      );
+      if (resp.statusCode != 200 || resp.body.isEmpty) return null;
+
+      final contentType = resp.headers['content-type'] ?? '';
+      final body = resp.body;
+
+      // If plain text or markdown, return directly
+      if (contentType.contains('text/plain') ||
+          contentType.contains('markdown')) {
+        return body;
+      }
+
+      // Fallback: strip HTML tags to get readable text
+      return _stripHtml(body);
+    } catch (e) {
+      debugPrint('Error fetching changelog: $e');
+      return null;
+    }
+  }
+
+  /// Lightweight HTML stripping for changelog content.
+  String _stripHtml(String html) {
+    var text = html.replaceAll(
+      RegExp(r'<script[^>]*>.*?</script>', dotAll: true, caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<style[^>]*>.*?</style>', dotAll: true, caseSensitive: false),
+      '',
+    );
+
+    text = text.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'</p>', caseSensitive: false), '\n');
+
+    text = text.replaceAll(RegExp(r'<[^>]+>'), '');
+
+    text = text
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll('&amp;', '&');
+
+    text = text.replaceAll(RegExp(r' +'), ' ');
+    text = text.replaceAll(RegExp(r'\n\s*\n+'), '\n\n');
+    return text.trim();
+  }
+
   /// Extracts screenshots for a specific app package from the specified repository
   /// If repositoryUrl is provided, fetches from that repository's index
   /// Otherwise uses the default cached repository
@@ -940,6 +1009,37 @@ class FDroidApiService {
     }
 
     return screenshots;
+  }
+
+  /// Fetches the changelog content from a changelog URL
+  Future<String?> fetchChangelogContent(String? changelogUrl) async {
+    if (changelogUrl == null || changelogUrl.isEmpty) {
+      return null;
+    }
+
+    try {
+      // If it's a relative URL, prepend the repository base URL
+      final fullUrl = changelogUrl.startsWith('http')
+          ? changelogUrl
+          : '${baseUrl ?? 'https://f-droid.org'}/$changelogUrl';
+
+      debugPrint('Fetching changelog from: $fullUrl');
+
+      final response = await _client.get(
+        Uri.parse(fullUrl),
+        headers: {'User-Agent': _userAgent},
+      );
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        debugPrint('Changelog fetch failed with status ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error fetching changelog: $e');
+      return null;
+    }
   }
 
   void dispose() {

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:florid/screens/permissions_screen.dart';
+import 'package:florid/widgets/changelog_preview.dart';
 import 'package:florid/widgets/m_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -43,8 +44,6 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const double expandedHeight = 180;
-
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -154,7 +153,7 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 16,
               children: [
-                // App info header
+                // What's New preview from version.whatsNew
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     vertical: 16,
@@ -493,6 +492,11 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                               );
                             },
                           ),
+                          if (widget.app.latestVersion?.whatsNew != null &&
+                              widget.app.latestVersion!.whatsNew!.isNotEmpty)
+                            ChangelogPreview(
+                              text: widget.app.latestVersion!.whatsNew,
+                            ),
                           if (isInstalled)
                             Chip(
                               visualDensity: VisualDensity.compact,
@@ -505,10 +509,17 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                           FutureBuilder<IzzyStats>(
                             future: _statsFuture,
                             builder: (context, snapshot) {
-                              final stats = snapshot.data;
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const SizedBox.shrink();
+                              }
+                              if (snapshot.hasError || snapshot.data == null) {
+                                return const SizedBox.shrink();
+                              }
+                              final stats = snapshot.data!;
                               return _DownloadSection(
                                 app: widget.app,
-                                stats: stats!,
+                                stats: stats,
                               );
                             },
                           ),
@@ -606,9 +617,9 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
 
 class _DownloadSection extends StatefulWidget {
   final FDroidApp app;
-  final IzzyStats stats;
+  final IzzyStats? stats;
 
-  const _DownloadSection({required this.app, required this.stats});
+  const _DownloadSection({required this.app, this.stats});
 
   @override
   State<_DownloadSection> createState() => _DownloadSectionState();
@@ -808,7 +819,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                     ),
                   ),
                 ),
-                if (!widget.stats.hasAny)
+                if (widget.stats?.hasAny != true)
                   Expanded(
                     child: Card.outlined(
                       margin: EdgeInsets.zero,
@@ -844,7 +855,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                       ),
                     ),
                   ),
-                if (widget.stats.hasAny)
+                if (widget.stats?.hasAny == true)
                   Expanded(
                     child: Card.outlined(
                       margin: EdgeInsets.zero,
@@ -865,8 +876,8 @@ class _DownloadSectionState extends State<_DownloadSection> {
                               ),
                             ),
                             Text(
-                              widget.stats.last365Days != null
-                                  ? _formatCount(widget.stats.last365Days!)
+                              widget.stats!.last365Days != null
+                                  ? _formatCount(widget.stats!.last365Days!)
                                   : 'N/A',
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(

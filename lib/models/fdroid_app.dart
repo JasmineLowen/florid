@@ -210,6 +210,7 @@ class FDroidVersion {
   final List<String>? permissions;
   final List<String>? features;
   final List<String>? nativecode;
+  final String? whatsNew;
 
   const FDroidVersion({
     required this.versionCode,
@@ -226,6 +227,7 @@ class FDroidVersion {
     this.permissions,
     this.features,
     this.nativecode,
+    this.whatsNew,
   });
 
   factory FDroidVersion.fromJson(Map<String, dynamic> json) =>
@@ -465,6 +467,21 @@ class FDroidRepository {
             final targetSdkVersion = usesSdk['targetSdkVersion']?.toString();
             final maxSdkVersion = usesSdk['maxSdkVersion']?.toString();
 
+            // Extract localized what's new/release notes from version
+            String? whatsNew;
+            final rawWhatsNew = versionData['whatsNew'];
+            if (rawWhatsNew != null) {
+              if (rawWhatsNew is String) {
+                final normalized = rawWhatsNew.trim();
+                whatsNew = normalized.isEmpty ? null : normalized;
+              } else {
+                // Some repos may localize this field
+                final localized = extractLocalized(rawWhatsNew);
+                final normalized = localized.trim();
+                whatsNew = normalized.isEmpty ? null : normalized;
+              }
+            }
+
             if (apkName.isEmpty) {
               // Skip invalid version entries without an APK reference
               return;
@@ -484,6 +501,7 @@ class FDroidRepository {
               minSdkVersion: minSdkVersion,
               targetSdkVersion: targetSdkVersion,
               maxSdkVersion: maxSdkVersion,
+              whatsNew: whatsNew,
             );
           } catch (_) {
             // Silently skip malformed version; could add logging hook
