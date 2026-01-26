@@ -1,4 +1,5 @@
 import 'package:florid/utils/menu_actions.dart';
+import 'package:florid/widgets/f_tabbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -156,17 +157,26 @@ class _UpdatesScreenState extends State<UpdatesScreen>
                 ],
               ),
             ],
-            bottom: TabBar(
-              dividerHeight: 0,
+            bottom: FTabBar(
               controller: _tabController,
-              tabs: [
-                Tab(
-                  text: repositoryLoaded && updatableApps.isNotEmpty
+              items: [
+                FloridTabBarItem(
+                  icon: Symbols.system_update,
+                  label: repositoryLoaded && updatableApps.isNotEmpty
                       ? 'Updates (${updatableApps.length})'
                       : 'Updates',
                 ),
-                Tab(text: 'On Device'),
+                FloridTabBarItem(icon: Symbols.devices, label: 'On Device'),
+                // Tab(
+                //   text: repositoryLoaded && updatableApps.isNotEmpty
+                //       ? 'Updates (${updatableApps.length})'
+                //       : 'Updates',
+                // ),
+                // Tab(text: 'On Device'),
               ],
+              onTabChanged: (index) {
+                _tabController.animateTo(index);
+              },
             ),
           ),
           body: RefreshIndicator(

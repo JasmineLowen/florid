@@ -3,7 +3,7 @@ import 'package:florid/providers/repositories_provider.dart';
 import 'package:florid/screens/categories_screen.dart';
 import 'package:florid/screens/home_screen.dart';
 import 'package:florid/utils/menu_actions.dart';
-import 'package:florid/widgets/theme_aware_tabbar.dart';
+import 'package:florid/widgets/f_tabbar.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:provider/provider.dart';
