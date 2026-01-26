@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/fdroid_app.dart';
@@ -20,6 +21,7 @@ class FDroidApiService {
   final Dio _dio;
   final Map<String, CancelToken> _downloadTokens = {};
   final DatabaseService _databaseService;
+  String _userAgent = 'Florid';
 
   /// Cache raw repository JSON for screenshot extraction
   Map<String, dynamic>? _cachedRawJson;
@@ -30,7 +32,26 @@ class FDroidApiService {
     DatabaseService? databaseService,
   }) : _client = client ?? http.Client(),
        _dio = dio ?? Dio(),
-       _databaseService = databaseService ?? DatabaseService();
+       _databaseService = databaseService ?? DatabaseService() {
+    _initializeUserAgent();
+  }
+
+  /// Initializes the User-Agent header with app version
+  Future<void> _initializeUserAgent() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      _userAgent = 'Florid ${packageInfo.version}';
+
+      // Configure Dio with User-Agent
+      _dio.options.headers['User-Agent'] = _userAgent;
+
+      debugPrint('User-Agent set to: $_userAgent');
+    } catch (e) {
+      debugPrint('Error setting User-Agent: $e');
+      _userAgent = 'Florid';
+      _dio.options.headers['User-Agent'] = _userAgent;
+    }
+  }
 
   /// Sets the repository URL (e.g., from the main F-Droid or a custom repo)
   void setRepositoryUrl(String url) {
@@ -120,7 +141,10 @@ class FDroidApiService {
     // Try to fetch from network
     try {
       debugPrint('Fetching from network: $repoIndexUrl');
-      final response = await _client.get(Uri.parse(repoIndexUrl!));
+      final response = await _client.get(
+        Uri.parse(repoIndexUrl!),
+        headers: {'User-Agent': _userAgent},
+      );
 
       if (response.statusCode == 200) {
         final body = response.body;
@@ -234,7 +258,10 @@ class FDroidApiService {
       }
 
       debugPrint('Fetching from custom repo: $indexUrl');
-      final response = await _client.get(Uri.parse(indexUrl));
+      final response = await _client.get(
+        Uri.parse(indexUrl),
+        headers: {'User-Agent': _userAgent},
+      );
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
