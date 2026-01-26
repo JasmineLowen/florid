@@ -307,6 +307,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       final app = results[index];
                       return AppListItem(
                         app: app,
+                        showInstallStatus: false,
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(

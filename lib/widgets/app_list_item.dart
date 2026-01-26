@@ -10,6 +10,7 @@ import '../providers/download_provider.dart';
 class AppListItem extends StatelessWidget {
   final FDroidApp app;
   final VoidCallback? onTap;
+  final VoidCallback? onUpdate;
   final bool showCategory;
   final bool showInstallStatus;
 
@@ -17,6 +18,7 @@ class AppListItem extends StatelessWidget {
     super.key,
     required this.app,
     this.onTap,
+    this.onUpdate,
     this.showCategory = true,
     this.showInstallStatus = true,
   });
@@ -32,7 +34,6 @@ class AppListItem extends StatelessWidget {
       // minLeadingWidth: 64,
       leading: Consumer2<AppProvider, DownloadProvider>(
         builder: (context, appProvider, downloadProvider, _) {
-          final isInstalled = appProvider.isAppInstalled(app.packageName);
           final version = app.latestVersion;
           final isDownloading = version != null
               ? downloadProvider.isDownloading(
@@ -95,24 +96,39 @@ class AppListItem extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(app.summary, maxLines: 2, overflow: TextOverflow.ellipsis),
-      trailing: Visibility(
-        visible: showInstallStatus,
-        child: Consumer<AppProvider>(
-          builder: (context, appProvider, _) {
-            final isInstalled = appProvider.isAppInstalled(app.packageName);
-            if (isInstalled) {
-              return Icon(Symbols.check_circle, weight: 400);
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-      ),
+      trailing: showInstallStatus
+          ? Consumer<AppProvider>(
+              builder: (context, appProvider, _) {
+                final isInstalled = appProvider.isAppInstalled(app.packageName);
+                final installedApp = appProvider.getInstalledApp(
+                  app.packageName,
+                );
+                final latestVersion = app.latestVersion;
+
+                // Check if update is available
+                final hasUpdate =
+                    isInstalled &&
+                    installedApp != null &&
+                    installedApp.versionCode != null &&
+                    latestVersion != null &&
+                    installedApp.versionCode! < latestVersion.versionCode;
+
+                if (hasUpdate) {
+                  return TextButton(onPressed: onUpdate, child: Text('Update'));
+                }
+
+                if (isInstalled) {
+                  return Icon(Symbols.check_circle, weight: 400);
+                }
+                return const SizedBox.shrink();
+              },
+            )
+          : null,
       dense: true,
     );
   }
 
   void _showQuickViewModal(BuildContext context) {
-    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
@@ -190,117 +206,6 @@ class _MultiIconState extends State<_MultiIcon> {
       // Suppress error logs
       errorListener: (error) {
         // Silently catch errors - no logging
-      },
-    );
-  }
-}
-
-class _DownloadButton extends StatelessWidget {
-  final FDroidApp app;
-
-  const _DownloadButton({required this.app});
-
-  @override
-  Widget build(BuildContext context) {
-    if (app.latestVersion == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Consumer<DownloadProvider>(
-      builder: (context, downloadProvider, child) {
-        final version = app.latestVersion!;
-        final isDownloading = downloadProvider.isDownloading(
-          app.packageName,
-          version.versionName,
-        );
-        final isDownloaded = downloadProvider.isDownloaded(
-          app.packageName,
-          version.versionName,
-        );
-        final progress = downloadProvider.getProgress(
-          app.packageName,
-          version.versionName,
-        );
-
-        if (isDownloading) {
-          return SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 3,
-              year2023: false,
-            ),
-          );
-        }
-
-        return IconButton(
-          onPressed: () async {
-            if (isDownloaded) {
-              // Install APK
-              try {
-                final downloadInfo = downloadProvider.getDownloadInfo(
-                  app.packageName,
-                  version.versionName,
-                );
-                if (downloadInfo?.filePath != null) {
-                  // Request install permission first
-                  final hasPermission = await downloadProvider
-                      .requestInstallPermission();
-                  if (!hasPermission) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Install permission is required to install APK files',
-                          ),
-                        ),
-                      );
-                    }
-                    return;
-                  }
-
-                  await downloadProvider.installApk(downloadInfo!.filePath!);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${app.name} installation started!'),
-                      ),
-                    );
-                  }
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Installation failed: ${e.toString()}'),
-                    ),
-                  );
-                }
-              }
-            } else {
-              // Download APK
-              try {
-                await downloadProvider.downloadApk(app);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${app.name} downloaded successfully!'),
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Download failed: ${e.toString()}')),
-                  );
-                }
-              }
-            }
-          },
-          icon: Icon(isDownloaded ? Symbols.install_mobile : Symbols.download),
-          tooltip: isDownloaded ? 'Install' : 'Download',
-        );
       },
     );
   }

@@ -150,6 +150,7 @@ class _HomeScreenState extends State<HomeScreen>
                             final app = recentlyUpdatedApps[index];
                             return AppListItem(
                               app: app,
+                              showInstallStatus: false,
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
@@ -227,6 +228,7 @@ class _HomeScreenState extends State<HomeScreen>
                           final app = latestApps[index];
                           return AppListItem(
                             app: app,
+                            showInstallStatus: false,
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(

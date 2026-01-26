@@ -133,6 +133,7 @@ class _LatestScreenState extends State<LatestScreen>
             final app = apps[index];
             return AppListItem(
               app: app,
+              showInstallStatus: false,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(

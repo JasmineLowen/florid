@@ -143,8 +143,7 @@ class _CategoryAppsScreenState extends State<CategoryAppsScreen> {
                 final app = apps[index];
                 return AppListItem(
                   app: app,
-                  showCategory:
-                      false, // Don't show category since we're already in a category
+                  showInstallStatus: false,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(

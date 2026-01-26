@@ -137,12 +137,11 @@ class _RecentlyUpdatedScreenState extends State<RecentlyUpdatedScreen>
             final app = apps[index];
             return AppListItem(
               app: app,
+              showInstallStatus: false,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => AppDetailsScreen(
-                      app: app,
-                    ),
+                    builder: (context) => AppDetailsScreen(app: app),
                   ),
                 );
               },

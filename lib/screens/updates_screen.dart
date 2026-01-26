@@ -367,128 +367,55 @@ class _UpdatesScreenState extends State<UpdatesScreen>
 
                 return Card(
                   elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
+                  child: Column(
+                    children: [
+                      AppListItem(
+                        app: app,
+                        showInstallStatus: true,
+                        onUpdate: () => _updateApp(context, app),
+                        onTap: () async {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => AppDetailsScreen(app: app),
+                            ),
+                          );
+                        },
+                      ),
+                      if (installedApp != null)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: Row(
                             children: [
-                              AppListItem(
-                                app: app,
-                                showInstallStatus: false,
-                                onTap: () async {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          AppDetailsScreen(app: app),
+                              Text(
+                                'Update from ${installedApp.versionName ?? 'Unknown'}',
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
-                                  );
-                                },
                               ),
-                              if (installedApp != null)
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    0,
-                                    16,
-                                    12,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Update from ${installedApp.versionName ?? 'Unknown'}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelMedium
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                            ),
-                                      ),
-                                      Icon(
-                                        Symbols.arrow_right_alt,
-                                        size: 16,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                      ),
-                                      Text(
-                                        app.latestVersion?.versionName ??
-                                            'Unknown',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelMedium
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              if (app.latestVersion?.whatsNew != null &&
-                                  app.latestVersion!.whatsNew!.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    0,
-                                    16,
-                                    12,
-                                  ),
-                                  child: ChangelogPreview(
-                                    text: app.latestVersion!.whatsNew,
-                                  ),
-                                ),
+                              Icon(
+                                Symbols.arrow_right_alt,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              Text(
+                                app.latestVersion?.versionName ?? 'Unknown',
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                              ),
                             ],
                           ),
                         ),
-                        Consumer<DownloadProvider>(
-                          builder: (context, downloadProvider, _) {
-                            final downloadInfo = downloadProvider
-                                .getDownloadInfo(
-                                  app.packageName,
-                                  app.latestVersion?.versionName ?? '',
-                                );
-                            final isDownloading =
-                                downloadInfo?.status ==
-                                DownloadStatus.downloading;
-
-                            if (isDownloading) {
-                              final progress = downloadProvider.getProgress(
-                                app.packageName,
-                                app.latestVersion?.versionName ?? '',
-                              );
-                              return Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  CircularProgressIndicator(
-                                    value: progress,
-                                    year2023: false,
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      downloadProvider.cancelDownload(
-                                        app.packageName,
-                                        app.latestVersion?.versionName ?? '',
-                                      );
-                                    },
-                                    icon: Icon(Symbols.close),
-                                  ),
-                                ],
-                              );
-                            }
-
-                            return OutlinedButton(
-                              onPressed: () => _updateApp(context, app),
-                              child: const Text('Update'),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                      if (app.latestVersion?.whatsNew != null &&
+                          app.latestVersion!.whatsNew!.isNotEmpty)
+                        ChangelogPreview(text: app.latestVersion!.whatsNew),
+                    ],
                   ),
                 ).animate().fadeIn(duration: 300.ms, delay: (100 * index).ms);
               },
@@ -546,127 +473,24 @@ class _UpdatesScreenState extends State<UpdatesScreen>
 
         return Card(
           elevation: 0,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      AppListItem(
-                        app: app,
-                        showInstallStatus: false,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => AppDetailsScreen(app: app),
-                            ),
-                          );
-                        },
-                      ),
-                      if (installedApp != null)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                          child: Row(
-                            children: [
-                              if (hasUpdate) ...[
-                                Text(
-                                  'Update from ${installedApp.versionName ?? 'Unknown'}',
-                                  style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                      ),
-                                ),
-                                Icon(
-                                  Symbols.arrow_right_alt,
-                                  size: 16,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                Text(
-                                  app.latestVersion?.versionName ?? 'Unknown',
-                                  style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                      ),
-                                ),
-                              ] else ...[
-                                Icon(
-                                  Symbols.check_circle,
-                                  size: 16,
-                                  color: Colors.green[400],
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    'Up to date (${installedApp.versionName ?? 'Unknown'})',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelMedium
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Consumer<DownloadProvider>(
-                  builder: (context, downloadProvider, _) {
-                    final downloadInfo = downloadProvider.getDownloadInfo(
-                      app.packageName,
-                      app.latestVersion?.versionName ?? '',
-                    );
-                    final isDownloading =
-                        downloadInfo?.status == DownloadStatus.downloading;
-
-                    if (isDownloading) {
-                      final progress = downloadProvider.getProgress(
-                        app.packageName,
-                        app.latestVersion?.versionName ?? '',
-                      );
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircularProgressIndicator(
-                            value: progress,
-                            year2023: false,
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              downloadProvider.cancelDownload(
-                                app.packageName,
-                                app.latestVersion?.versionName ?? '',
-                              );
-                            },
-                            icon: Icon(Symbols.close),
-                          ),
-                        ],
-                      );
-                    }
-                    if (hasUpdate) {
-                      return OutlinedButton(
-                        onPressed: () => _updateApp(context, app),
-                        child: const Text('Update'),
-                      );
-                    } else {
-                      return SizedBox(width: 8);
-                    }
-                  },
-                ),
-              ],
-            ),
+          child: Column(
+            children: [
+              AppListItem(
+                app: app,
+                showInstallStatus: true,
+                onUpdate: hasUpdate ? () => _updateApp(context, app) : null,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => AppDetailsScreen(app: app),
+                    ),
+                  );
+                },
+              ),
+              if (app.latestVersion?.whatsNew != null &&
+                  app.latestVersion!.whatsNew!.isNotEmpty)
+                ChangelogPreview(text: app.latestVersion!.whatsNew),
+            ],
           ),
         ).animate().fadeIn(duration: 300.ms, delay: (100 * index).ms);
       },
