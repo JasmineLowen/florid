@@ -155,6 +155,14 @@ class AppThemes {
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         elevation: 0,
       ),
+      popupMenuTheme: PopupMenuThemeData(
+        elevation: 1,
+        color: ColorScheme.fromSeed(
+          seedColor: kAppColor,
+          brightness: Brightness.light,
+        ).surfaceContainerHighest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
     );
   }
 
@@ -291,6 +299,14 @@ class AppThemes {
         }),
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         elevation: 0,
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        elevation: 1,
+        color: ColorScheme.fromSeed(
+          seedColor: kAppColor,
+          brightness: Brightness.dark,
+        ).surfaceContainerHighest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
     );
   }

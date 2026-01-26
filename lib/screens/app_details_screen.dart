@@ -43,67 +43,169 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            expandedHeight: expandedHeight,
-            pinned: true,
-            flexibleSpace: LayoutBuilder(
-              builder: (context, constraints) {
-                final maxHeight = constraints.maxHeight;
-                final collapseRange = expandedHeight - kToolbarHeight;
-                final t = collapseRange <= 0
-                    ? 1.0
-                    : ((expandedHeight - maxHeight) / collapseRange).clamp(
-                        0.0,
-                        1.0,
-                      );
+          // SliverAppBar(
+          //   expandedHeight: expandedHeight,
+          //   pinned: true,
+          //   flexibleSpace: LayoutBuilder(
+          //     builder: (context, constraints) {
+          //       final maxHeight = constraints.maxHeight;
+          //       final collapseRange = expandedHeight - kToolbarHeight;
+          //       final t = collapseRange <= 0
+          //           ? 1.0
+          //           : ((expandedHeight - maxHeight) / collapseRange).clamp(
+          //               0.0,
+          //               1.0,
+          //             );
 
-                return FlexibleSpaceBar(
-                  titlePadding: EdgeInsetsDirectional.only(
-                    start: t < 1 ? 50 : 16,
-                    bottom: 16,
-                    end: 100,
+          //       return FlexibleSpaceBar(
+          //         titlePadding: EdgeInsetsDirectional.only(
+          //           start: t < 1 ? 50 : 16,
+          //           bottom: 16,
+          //           end: 100,
+          //         ),
+          //         title: AnimatedOpacity(
+          //           opacity: t,
+          //           duration: const Duration(milliseconds: 150),
+          //           child: Row(
+          //             spacing: 8,
+          //             children: [
+          //               Container(
+          //                 width: 24,
+          //                 height: 24,
+          //                 decoration: BoxDecoration(
+          //                   borderRadius: BorderRadius.circular(8),
+          //                 ),
+          //                 child: ClipRRect(
+          //                   borderRadius: BorderRadius.circular(8),
+          //                   child: _AppDetailsIcon(app: widget.app),
+          //                 ),
+          //               ),
+          //               Expanded(
+          //                 child: Text(
+          //                   widget.app.name,
+          //                   overflow: TextOverflow.ellipsis,
+          //                   maxLines: 1,
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //         background: Container(
+          //           decoration: BoxDecoration(
+          //             color: Theme.of(context).colorScheme.surfaceContainer,
+          //           ),
+          //         ),
+          //       );
+          //     },
+          //   ),
+          //   actions: [
+          //     IconButton(
+          //       icon: const Icon(Symbols.share),
+          //       onPressed: () {
+          //         Share.share(
+          //           'Check out ${widget.app.name} on F-Droid: https://f-droid.org/packages/${widget.app.packageName}/',
+          //         );
+          //       },
+          //     ),
+          //     PopupMenuButton<String>(
+          //       onSelected: (value) async {
+          //         switch (value) {
+          //           case 'website':
+          //             if (widget.app.webSite != null) {
+          //               await launchUrl(Uri.parse(widget.app.webSite!));
+          //             }
+          //             break;
+          //           case 'source':
+          //             if (widget.app.sourceCode != null) {
+          //               await launchUrl(Uri.parse(widget.app.sourceCode!));
+          //             }
+          //             break;
+          //           case 'issues':
+          //             if (widget.app.issueTracker != null) {
+          //               await launchUrl(Uri.parse(widget.app.issueTracker!));
+          //             }
+          //             break;
+          //         }
+          //       },
+          //       itemBuilder: (context) => [
+          //         if (widget.app.webSite != null)
+          //           const PopupMenuItem(
+          //             value: 'website',
+          //             child: ListTile(
+          //               leading: Icon(Symbols.public),
+          //               title: Text('Website'),
+          //               contentPadding: EdgeInsets.zero,
+          //             ),
+          //           ),
+          //         if (widget.app.sourceCode != null)
+          //           const PopupMenuItem(
+          //             value: 'source',
+          //             child: ListTile(
+          //               leading: Icon(Symbols.code),
+          //               title: Text('Source Code'),
+          //               contentPadding: EdgeInsets.zero,
+          //             ),
+          //           ),
+          //         if (widget.app.issueTracker != null)
+          //           const PopupMenuItem(
+          //             value: 'issues',
+          //             child: ListTile(
+          //               leading: Icon(Symbols.bug_report),
+          //               title: Text('Issue Tracker'),
+          //               contentPadding: EdgeInsets.zero,
+          //             ),
+          //           ),
+          //       ],
+          //     ),
+          //   ],
+          // ),
+          SliverAppBar.large(
+            pinned: true,
+            // floating: true,
+            centerTitle: false,
+            title: Row(
+              spacing: 16.0,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 48,
+                  width: 48,
+                  child: Material(
+                    elevation: 2,
+                    borderRadius: BorderRadius.circular(8),
+                    clipBehavior: Clip.antiAlias,
+                    child: _AppDetailsIcon(app: widget.app),
                   ),
-                  title: AnimatedOpacity(
-                    opacity: t,
-                    duration: const Duration(milliseconds: 150),
-                    child: Row(
-                      spacing: 8,
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: _AppDetailsIcon(app: widget.app),
-                          ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.app.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'by ${widget.app.authorName ?? 'Unknown'}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        Expanded(
-                          child: Text(
-                            widget.app.name,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  background: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                    ),
-                  ),
-                );
-              },
+                ),
+              ],
             ),
             actions: [
               IconButton(
                 icon: const Icon(Symbols.share),
                 onPressed: () {
-                  Share.share(
-                    'Check out ${widget.app.name} on F-Droid: https://f-droid.org/packages/${widget.app.packageName}/',
+                  SharePlus.instance.share(
+                    ShareParams(
+                      text:
+                          'Check out ${widget.app.name} on F-Droid: https://f-droid.org/packages/${widget.app.packageName}/',
+                    ),
                   );
                 },
               ),
@@ -184,63 +286,333 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
 
                         children: [
-                          Row(
-                            spacing: 8,
-                            children: [
-                              Hero(
-                                tag: 'app-icon-${widget.app.packageName}',
-                                child: Material(
-                                  child: SizedBox(
-                                    width: 100,
-                                    height: 100,
+                          Consumer2<DownloadProvider, AppProvider>(
+                            builder: (context, downloadProvider, appProvider, child) {
+                              final version = widget.app.latestVersion!;
+                              final isInstalled = appProvider.isAppInstalled(
+                                widget.app.packageName,
+                              );
+                              final installedApp = appProvider.getInstalledApp(
+                                widget.app.packageName,
+                              );
+                              final downloadInfo = downloadProvider
+                                  .getDownloadInfo(
+                                    widget.app.packageName,
+                                    version.versionName,
+                                  );
+                              final isDownloading =
+                                  downloadInfo?.status ==
+                                  DownloadStatus.downloading;
+                              final isCancelled =
+                                  downloadInfo?.status ==
+                                  DownloadStatus.cancelled;
+                              final fileExists = downloadInfo?.filePath != null
+                                  ? File(downloadInfo!.filePath!).existsSync()
+                                  : false;
+                              final isDownloaded =
+                                  downloadInfo?.status ==
+                                      DownloadStatus.completed &&
+                                  downloadInfo?.filePath != null &&
+                                  !isCancelled &&
+                                  fileExists;
 
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: _AppDetailsIcon(app: widget.app),
-                                    ),
+                              if (isDownloading) {
+                                return SizedBox(
+                                  width: double.infinity,
+                                  height: 48,
+                                  child: FilledButton.tonal(
+                                    onPressed: () {
+                                      downloadProvider.cancelDownload(
+                                        widget.app.packageName,
+                                        version.versionName,
+                                      );
+                                    },
+                                    child: const Text('Cancel Download'),
                                   ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  spacing: 4,
+                                );
+                              }
+
+                              if (isInstalled && installedApp != null) {
+                                return Row(
+                                  spacing: 8,
                                   children: [
-                                    Text(
-                                      widget.app.name,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleLarge,
-                                    ),
-                                    Text(
-                                      'by ${widget.app.authorName ?? 'Unknown'}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 48,
+                                        child: FilledButton.tonalIcon(
+                                          onPressed: () async {
+                                            try {
+                                              await downloadProvider
+                                                  .uninstallApp(
+                                                    widget.app.packageName,
+                                                  );
+                                              await Future.delayed(
+                                                const Duration(seconds: 1),
+                                              );
+                                              await appProvider
+                                                  .fetchInstalledApps();
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Uninstall failed: ${e.toString()}',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          icon: const Icon(
+                                            Symbols.delete_rounded,
+                                            fill: 1,
                                           ),
-                                    ),
-                                    if (isInstalled)
-                                      Chip(
-                                        visualDensity: VisualDensity.compact,
-                                        avatar: Icon(
-                                          Symbols.check_circle,
-                                          fill: 1,
-                                        ),
-                                        label: Text(
-                                          'Installed${installedApp?.versionName != null ? ' (${installedApp!.versionName})' : ''}',
+                                          label: const Text('Uninstall'),
+                                          style: FilledButton.styleFrom(
+                                            foregroundColor: Theme.of(
+                                              context,
+                                            ).colorScheme.onError,
+                                            backgroundColor: Theme.of(
+                                              context,
+                                            ).colorScheme.error,
+                                          ),
                                         ),
                                       ),
+                                    ),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 48,
+                                        child: FilledButton.icon(
+                                          onPressed: () async {
+                                            try {
+                                              final opened = await appProvider
+                                                  .openInstalledApp(
+                                                    widget.app.packageName,
+                                                  );
+                                              if (!opened && context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Unable to open ${widget.app.name}.',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Open failed: ${e.toString()}',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          icon: const Icon(
+                                            Symbols.open_in_new_rounded,
+                                          ),
+                                          label: const Text('Open'),
+                                        ),
+                                      ),
+                                    ),
                                   ],
+                                );
+                              }
+
+                              return SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: FilledButton.icon(
+                                  onPressed: () async {
+                                    if (isDownloaded) {
+                                      try {
+                                        final downloadInfo = downloadProvider
+                                            .getDownloadInfo(
+                                              widget.app.packageName,
+                                              version.versionName,
+                                            );
+                                        if (downloadInfo?.filePath != null) {
+                                          final hasPermission =
+                                              await downloadProvider
+                                                  .requestInstallPermission();
+                                          if (!hasPermission) {
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Install permission is required to install APK files',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            return;
+                                          }
+
+                                          await downloadProvider.installApk(
+                                            downloadInfo!.filePath!,
+                                          );
+                                          await Future.delayed(
+                                            const Duration(milliseconds: 100),
+                                          );
+                                          await appProvider
+                                              .fetchInstalledApps();
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  '${widget.app.name} installation started!',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Installation failed: ${e.toString()}',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    } else {
+                                      final hasPermission =
+                                          await downloadProvider
+                                              .requestPermissions();
+
+                                      if (!hasPermission) {
+                                        if (context.mounted) {
+                                          await showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              icon: const Icon(
+                                                Symbols.warning,
+                                                size: 48,
+                                              ),
+                                              title: const Text(
+                                                'Storage Permission Required',
+                                              ),
+                                              content: const Text(
+                                                'Florid needs storage permission to download APK files.\n\n'
+                                                'To enable:\n'
+                                                '1. Go to Settings (button below)\n'
+                                                '2. Find "Permissions"\n'
+                                                '3. Enable "Files and media" or "Storage"\n\n'
+                                                'Then try downloading again.',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(
+                                                    context,
+                                                  ).pop(),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                FilledButton(
+                                                  onPressed: () async {
+                                                    Navigator.of(context).pop();
+                                                    await openAppSettings();
+                                                  },
+                                                  child: const Text(
+                                                    'Open Settings',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                        return;
+                                      }
+
+                                      try {
+                                        await downloadProvider.downloadApk(
+                                          widget.app,
+                                        );
+
+                                        if (context.mounted) {
+                                          for (int i = 0; i < 15; i++) {
+                                            await Future.delayed(
+                                              const Duration(milliseconds: 800),
+                                            );
+                                            await appProvider
+                                                .fetchInstalledApps();
+                                            if (appProvider.isAppInstalled(
+                                              widget.app.packageName,
+                                            )) {
+                                              final downloadInfo =
+                                                  downloadProvider
+                                                      .getDownloadInfo(
+                                                        widget.app.packageName,
+                                                        widget
+                                                            .app
+                                                            .latestVersion!
+                                                            .versionName,
+                                                      );
+                                              if (downloadInfo?.filePath !=
+                                                  null) {
+                                                await downloadProvider
+                                                    .deleteDownloadedFile(
+                                                      downloadInfo!.filePath!,
+                                                    );
+                                              }
+                                              break;
+                                            }
+                                          }
+                                        }
+                                      } catch (e) {
+                                        final errorMsg = e.toString();
+                                        if (!errorMsg.contains('cancelled') &&
+                                            !errorMsg.contains('Cancelled')) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Download failed: $errorMsg',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  icon: Icon(
+                                    isDownloaded
+                                        ? Symbols.install_mobile
+                                        : Symbols.download,
+                                  ),
+                                  label: Text(
+                                    isDownloaded ? 'Install' : 'Download',
+                                  ),
                                 ),
-                              ),
-                            ],
+                              );
+                            },
                           ),
+                          if (isInstalled)
+                            Chip(
+                              visualDensity: VisualDensity.compact,
+                              avatar: Icon(Symbols.check_circle, fill: 1),
+                              label: Text(
+                                'Installed${installedApp?.versionName != null ? ' (${installedApp!.versionName})' : ''}',
+                              ),
+                            ),
 
                           _DownloadSection(app: widget.app),
                         ],
@@ -300,285 +672,12 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                 else
                   const SizedBox.shrink(),
                 // Permissions
+                SizedBox(height: 32),
               ],
             ),
           ),
         ],
       ),
-      bottomNavigationBar: widget.app.latestVersion == null
-          ? null
-          : BottomAppBar(
-              child: Consumer2<DownloadProvider, AppProvider>(
-                builder: (context, downloadProvider, appProvider, child) {
-                  final version = widget.app.latestVersion!;
-                  final isInstalled = appProvider.isAppInstalled(
-                    widget.app.packageName,
-                  );
-                  final installedApp = appProvider.getInstalledApp(
-                    widget.app.packageName,
-                  );
-                  final downloadInfo = downloadProvider.getDownloadInfo(
-                    widget.app.packageName,
-                    version.versionName,
-                  );
-                  final isDownloading =
-                      downloadInfo?.status == DownloadStatus.downloading;
-                  final isCancelled =
-                      downloadInfo?.status == DownloadStatus.cancelled;
-                  final fileExists = downloadInfo?.filePath != null
-                      ? File(downloadInfo!.filePath!).existsSync()
-                      : false;
-                  final isDownloaded =
-                      downloadInfo?.status == DownloadStatus.completed &&
-                      downloadInfo?.filePath != null &&
-                      !isCancelled &&
-                      fileExists;
-
-                  if (isDownloading) {
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton.tonal(
-                        onPressed: () {
-                          downloadProvider.cancelDownload(
-                            widget.app.packageName,
-                            version.versionName,
-                          );
-                        },
-                        child: const Text('Cancel Download'),
-                      ),
-                    );
-                  }
-
-                  if (isInstalled && installedApp != null) {
-                    return Row(
-                      spacing: 8,
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 48,
-                            child: FilledButton.tonalIcon(
-                              onPressed: () async {
-                                try {
-                                  await downloadProvider.uninstallApp(
-                                    widget.app.packageName,
-                                  );
-                                  await Future.delayed(
-                                    const Duration(seconds: 1),
-                                  );
-                                  await appProvider.fetchInstalledApps();
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Uninstall failed: ${e.toString()}',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                              icon: const Icon(Symbols.delete_rounded, fill: 1),
-                              label: const Text('Uninstall'),
-                              style: FilledButton.styleFrom(
-                                foregroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.onError,
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: SizedBox(
-                            height: 48,
-                            child: FilledButton.icon(
-                              onPressed: () async {
-                                try {
-                                  final opened = await appProvider
-                                      .openInstalledApp(widget.app.packageName);
-                                  if (!opened && context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Unable to open ${widget.app.name}.',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Open failed: ${e.toString()}',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                              icon: const Icon(Symbols.open_in_new_rounded),
-                              label: const Text('Open'),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton.icon(
-                      onPressed: () async {
-                        if (isDownloaded) {
-                          try {
-                            final downloadInfo = downloadProvider
-                                .getDownloadInfo(
-                                  widget.app.packageName,
-                                  version.versionName,
-                                );
-                            if (downloadInfo?.filePath != null) {
-                              final hasPermission = await downloadProvider
-                                  .requestInstallPermission();
-                              if (!hasPermission) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Install permission is required to install APK files',
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return;
-                              }
-
-                              await downloadProvider.installApk(
-                                downloadInfo!.filePath!,
-                              );
-                              await Future.delayed(
-                                const Duration(milliseconds: 100),
-                              );
-                              await appProvider.fetchInstalledApps();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '${widget.app.name} installation started!',
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Installation failed: ${e.toString()}',
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        } else {
-                          final hasPermission = await downloadProvider
-                              .requestPermissions();
-
-                          if (!hasPermission) {
-                            if (context.mounted) {
-                              await showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  icon: const Icon(Symbols.warning, size: 48),
-                                  title: const Text(
-                                    'Storage Permission Required',
-                                  ),
-                                  content: const Text(
-                                    'Florid needs storage permission to download APK files.\n\n'
-                                    'To enable:\n'
-                                    '1. Go to Settings (button below)\n'
-                                    '2. Find "Permissions"\n'
-                                    '3. Enable "Files and media" or "Storage"\n\n'
-                                    'Then try downloading again.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    FilledButton(
-                                      onPressed: () async {
-                                        Navigator.of(context).pop();
-                                        await openAppSettings();
-                                      },
-                                      child: const Text('Open Settings'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                            return;
-                          }
-
-                          try {
-                            await downloadProvider.downloadApk(widget.app);
-
-                            if (context.mounted) {
-                              for (int i = 0; i < 15; i++) {
-                                await Future.delayed(
-                                  const Duration(milliseconds: 800),
-                                );
-                                await appProvider.fetchInstalledApps();
-                                if (appProvider.isAppInstalled(
-                                  widget.app.packageName,
-                                )) {
-                                  final downloadInfo = downloadProvider
-                                      .getDownloadInfo(
-                                        widget.app.packageName,
-                                        widget.app.latestVersion!.versionName,
-                                      );
-                                  if (downloadInfo?.filePath != null) {
-                                    await downloadProvider.deleteDownloadedFile(
-                                      downloadInfo!.filePath!,
-                                    );
-                                  }
-                                  break;
-                                }
-                              }
-                            }
-                          } catch (e) {
-                            final errorMsg = e.toString();
-                            if (!errorMsg.contains('cancelled') &&
-                                !errorMsg.contains('Cancelled')) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Download failed: $errorMsg'),
-                                  ),
-                                );
-                              }
-                            }
-                          }
-                        }
-                      },
-                      icon: Icon(
-                        isDownloaded
-                            ? Symbols.install_mobile
-                            : Symbols.download,
-                      ),
-                      label: Text(isDownloaded ? 'Install' : 'Download'),
-                    ),
-                  );
-                },
-              ),
-            ),
     );
   }
 }
@@ -659,12 +758,6 @@ class _DownloadSectionState extends State<_DownloadSection> {
               children: [
                 Expanded(
                   child: Card.outlined(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                      ),
-                    ),
                     margin: EdgeInsets.zero,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -679,7 +772,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                               size: 32,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onPrimaryContainer,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           Text(
@@ -688,7 +781,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                                 ?.copyWith(
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.onPrimaryContainer,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                           ),
                         ],
@@ -698,12 +791,6 @@ class _DownloadSectionState extends State<_DownloadSection> {
                 ),
                 Expanded(
                   child: Card.outlined(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                      ),
-                    ),
                     margin: EdgeInsets.zero,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -718,7 +805,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                               size: 32,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onPrimaryContainer,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           Text(
@@ -727,7 +814,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                                 ?.copyWith(
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.onPrimaryContainer,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                           ),
                         ],
@@ -737,12 +824,6 @@ class _DownloadSectionState extends State<_DownloadSection> {
                 ),
                 Expanded(
                   child: Card.outlined(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                      ),
-                    ),
                     margin: EdgeInsets.zero,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -757,7 +838,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                               size: 32,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onPrimaryContainer,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           Text(
@@ -768,7 +849,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                                 ?.copyWith(
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.onPrimaryContainer,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                           ),
                         ],
