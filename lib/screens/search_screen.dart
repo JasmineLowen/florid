@@ -94,18 +94,6 @@ class _SearchScreenState extends State<SearchScreen> {
             autofocus: true,
             decoration: InputDecoration(
               hintText: 'Search F-Droid apps...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(99),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(99),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              filled: true,
               prefixIcon: const Icon(Symbols.search),
             ),
             textInputAction: TextInputAction.search,

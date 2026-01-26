@@ -11,6 +11,23 @@ class AppThemes {
       ),
       appBarTheme: const AppBarTheme(),
       useMaterial3: true,
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide(
+            color: ColorScheme.fromSeed(
+              seedColor: kAppColor,
+              brightness: Brightness.light,
+            ).primary,
+            width: 2,
+          ),
+        ),
+        filled: true,
+      ),
     );
   }
 
@@ -22,6 +39,23 @@ class AppThemes {
       ),
       appBarTheme: const AppBarTheme(),
       useMaterial3: true,
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide(
+            color: ColorScheme.fromSeed(
+              seedColor: kAppColor,
+              brightness: Brightness.light,
+            ).primary,
+            width: 2,
+          ),
+        ),
+        filled: true,
+      ),
     );
   }
 
@@ -33,14 +67,7 @@ class AppThemes {
         seedColor: kAppColor,
         brightness: Brightness.light,
       ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: ColorScheme.fromSeed(
-          seedColor: kAppColor,
-          brightness: Brightness.light,
-        ).surfaceContainerLow,
-        elevation: 0,
-        centerTitle: true,
-      ),
+      appBarTheme: AppBarTheme(centerTitle: true),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 0,
         backgroundColor: ColorScheme.fromSeed(
@@ -163,6 +190,22 @@ class AppThemes {
         ).surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderSide: BorderSide.none),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: ColorScheme.fromSeed(
+          seedColor: kAppColor,
+          brightness: Brightness.light,
+        ).surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
     );
   }
 
@@ -172,16 +215,8 @@ class AppThemes {
       colorScheme: ColorScheme.fromSeed(
         seedColor: kAppColor,
         brightness: Brightness.dark,
-        dynamicSchemeVariant: DynamicSchemeVariant.content,
       ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: ColorScheme.fromSeed(
-          seedColor: kAppColor,
-          brightness: Brightness.dark,
-        ).surfaceContainerLow,
-        elevation: 0,
-        centerTitle: true,
-      ),
+      appBarTheme: AppBarThemeData(centerTitle: true),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 0,
         backgroundColor: ColorScheme.fromSeed(
@@ -265,7 +300,7 @@ class AppThemes {
               color: ColorScheme.fromSeed(
                 seedColor: kAppColor,
                 brightness: Brightness.dark,
-              ).inverseSurface,
+              ).onInverseSurface,
             );
           }
           return IconThemeData(
@@ -278,7 +313,7 @@ class AppThemes {
         indicatorColor: ColorScheme.fromSeed(
           seedColor: kAppColor,
           brightness: Brightness.dark,
-        ).onPrimary,
+        ).onSurface,
         labelTextStyle: WidgetStateProperty.resolveWith((
           Set<WidgetState> states,
         ) {
@@ -306,6 +341,22 @@ class AppThemes {
           seedColor: kAppColor,
           brightness: Brightness.dark,
         ).surfaceContainerHighest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderSide: BorderSide.none),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: ColorScheme.fromSeed(
+          seedColor: kAppColor,
+          brightness: Brightness.dark,
+        ).surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
     );
