@@ -220,6 +220,209 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                               }
 
                               if (isInstalled && installedApp != null) {
+                                // Check if update is available
+                                final hasUpdate =
+                                    installedApp.versionCode != null &&
+                                    widget.app.latestVersion!.versionCode >
+                                        installedApp.versionCode!;
+
+                                if (hasUpdate) {
+                                  // Show Update button
+                                  return Column(
+                                    spacing: 8,
+                                    children: [
+                                      Row(
+                                        spacing: 8,
+                                        children: [
+                                          Expanded(
+                                            child: SizedBox(
+                                              height: 48,
+                                              child: FilledButton.icon(
+                                                onPressed: () async {
+                                                  final hasPermission =
+                                                      await downloadProvider
+                                                          .requestPermissions();
+
+                                                  if (!hasPermission) {
+                                                    if (context.mounted) {
+                                                      await showDialog(
+                                                        context: context,
+                                                        builder: (context) => AlertDialog(
+                                                          icon: const Icon(
+                                                            Symbols.warning,
+                                                            size: 48,
+                                                          ),
+                                                          title: const Text(
+                                                            'Storage Permission Required',
+                                                          ),
+                                                          content: const Text(
+                                                            'Florid needs storage permission to download APK files.\n\n'
+                                                            'To enable:\n'
+                                                            '1. Go to Settings (button below)\n'
+                                                            '2. Find "Permissions"\n'
+                                                            '3. Enable "Files and media" or "Storage"\n\n'
+                                                            'Then try downloading again.',
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(),
+                                                              child: const Text(
+                                                                'Cancel',
+                                                              ),
+                                                            ),
+                                                            FilledButton(
+                                                              onPressed: () async {
+                                                                Navigator.of(
+                                                                  context,
+                                                                ).pop();
+                                                                await openAppSettings();
+                                                              },
+                                                              child: const Text(
+                                                                'Open Settings',
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    }
+                                                    return;
+                                                  }
+
+                                                  try {
+                                                    await downloadProvider
+                                                        .downloadApk(
+                                                          widget.app,
+                                                        );
+
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Downloading ${widget.app.name} update...',
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  } catch (e) {
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Update failed: $e',
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                },
+                                                icon: const Icon(
+                                                  Symbols.upgrade,
+                                                ),
+                                                label: const Text('Update'),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 48,
+                                            child: FilledButton.tonalIcon(
+                                              onPressed: () async {
+                                                try {
+                                                  final opened =
+                                                      await appProvider
+                                                          .openInstalledApp(
+                                                            widget
+                                                                .app
+                                                                .packageName,
+                                                          );
+                                                  if (!opened &&
+                                                      context.mounted) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Unable to open ${widget.app.name}.',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                } catch (e) {
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Open failed: ${e.toString()}',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                              icon: const Icon(
+                                                Symbols.open_in_new_rounded,
+                                              ),
+                                              label: const Text('Open'),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 48,
+                                            child: FilledButton.tonal(
+                                              onPressed: () async {
+                                                try {
+                                                  await downloadProvider
+                                                      .uninstallApp(
+                                                        widget.app.packageName,
+                                                      );
+                                                  await Future.delayed(
+                                                    const Duration(seconds: 1),
+                                                  );
+                                                  await appProvider
+                                                      .fetchInstalledApps();
+                                                } catch (e) {
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Uninstall failed: ${e.toString()}',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                              // label: const Text('Uninstall'),
+                                              style: FilledButton.styleFrom(
+                                                foregroundColor: Theme.of(
+                                                  context,
+                                                ).colorScheme.onErrorContainer,
+                                                backgroundColor: Theme.of(
+                                                  context,
+                                                ).colorScheme.errorContainer,
+                                              ),
+                                              child: const Icon(
+                                                Symbols.delete_rounded,
+                                                fill: 1,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                // No update available, show normal buttons
                                 return Row(
                                   spacing: 8,
                                   children: [
