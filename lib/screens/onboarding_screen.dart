@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_provider.dart';
@@ -27,6 +28,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _progressStatus = 'Initializing...';
   double _progressValue = 0.0;
   List<Map<String, dynamic>> _presets = [];
+  bool _notificationsGranted = false;
+  bool _installPermissionGranted = false;
 
   @override
   void initState() {
@@ -82,6 +85,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
     // Start the actual setup
     _performSetup();
+  }
+
+  Future<void> _requestNotifications() async {
+    final status = await Permission.notification.request();
+    setState(() {
+      _notificationsGranted = status.isGranted;
+    });
+  }
+
+  Future<void> _requestInstallPermission() async {
+    final status = await Permission.requestInstallPackages.request();
+    setState(() {
+      _installPermissionGranted = status.isGranted;
+    });
   }
 
   Future<void> _performSetup() async {
@@ -232,6 +249,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (index) => setState(() => _currentPage = index),
                 children: [
                   _IntroStep(colorScheme: colorScheme),
+                  _PermissionsStep(
+                    notificationsGranted: _notificationsGranted,
+                    installPermissionGranted: _installPermissionGranted,
+                    onRequestNotifications: _requestNotifications,
+                    onRequestInstallPermission: _requestInstallPermission,
+                  ),
                   _ReposStep(
                     selectedRepos: _selectedRepos,
                     presets: _presets,
@@ -272,31 +295,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
 
-                  if (_currentPage < 2)
+                  if (_currentPage < 3)
                     Expanded(
                       child: SizedBox(
                         height: 48,
                         child: FilledButton(
                           onPressed:
-                              _currentPage == 1 &&
+                              _currentPage == 2 &&
                                   !_selectedRepos.values.any(
                                     (selected) => selected,
                                   )
                               ? null
                               : () {
-                                  if (_currentPage == 0) {
+                                  if (_currentPage == 0 || _currentPage == 1) {
                                     _pageController.nextPage(
                                       duration: const Duration(
                                         milliseconds: 250,
                                       ),
                                       curve: Curves.easeOut,
                                     );
-                                  } else if (_currentPage == 1) {
+                                  } else if (_currentPage == 2) {
                                     _startSetup();
                                   }
                                 },
                           child: Text(
-                            _currentPage == 1 ? 'Start Setup' : 'Continue',
+                            _currentPage == 2 ? 'Start Setup' : 'Continue',
                           ),
                         ),
                       ),
@@ -467,6 +490,163 @@ class _Pill extends StatelessWidget {
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: colorScheme.onSecondaryContainer,
         ),
+      ),
+    );
+  }
+}
+
+class _PermissionsStep extends StatelessWidget {
+  const _PermissionsStep({
+    required this.notificationsGranted,
+    required this.installPermissionGranted,
+    required this.onRequestNotifications,
+    required this.onRequestInstallPermission,
+  });
+
+  final bool notificationsGranted;
+  final bool installPermissionGranted;
+  final VoidCallback onRequestNotifications;
+  final VoidCallback onRequestInstallPermission;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          spacing: 24.0,
+          children: [
+            Row(
+              spacing: 8,
+              children: [
+                CircleAvatar(child: Icon(Symbols.notifications_active)),
+                Text(
+                  'Request Permissions',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ],
+            ).animate().fadeIn(duration: 500.ms),
+            Text(
+              'Florid needs a few permissions to provide you with the best experience.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ).animate().fadeIn(duration: 500.ms, delay: 200.ms),
+            Column(
+              spacing: 12,
+              children: [
+                _PermissionCard(
+                  icon: Symbols.notifications,
+                  title: 'Notifications',
+                  description: 'Get notified when apps are updated',
+                  isGranted: notificationsGranted,
+                  onRequest: onRequestNotifications,
+                ).animate().fadeIn(duration: 500.ms, delay: 400.ms),
+                _PermissionCard(
+                  icon: Symbols.install_mobile,
+                  title: 'App Installation',
+                  description: 'Allow Florid to install downloaded apps',
+                  isGranted: installPermissionGranted,
+                  onRequest: onRequestInstallPermission,
+                ).animate().fadeIn(duration: 500.ms, delay: 600.ms),
+              ],
+            ),
+            Text(
+              'You can enable these permissions anytime in Settings.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(duration: 500.ms, delay: 800.ms),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PermissionCard extends StatelessWidget {
+  const _PermissionCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.isGranted,
+    required this.onRequest,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final bool isGranted;
+  final VoidCallback onRequest;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isGranted
+            ? colorScheme.primaryContainer.withOpacity(0.5)
+            : colorScheme.surfaceContainer,
+        border: Border.all(
+          color: isGranted ? colorScheme.primary : colorScheme.outlineVariant,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        spacing: 12,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isGranted
+                  ? colorScheme.primary.withOpacity(0.2)
+                  : colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: isGranted
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 4,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isGranted)
+            Icon(Symbols.check_circle, color: colorScheme.primary, fill: 1)
+          else
+            SizedBox(
+              height: 32,
+              child: FilledButton.tonal(
+                onPressed: onRequest,
+                child: const Text('Allow'),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -13,13 +13,12 @@ import 'providers/settings_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/database_service.dart';
 import 'services/fdroid_api_service.dart';
-import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize notification service and request permission
-  await NotificationService().init();
+  // await NotificationService().init();
 
   runApp(const MainApp());
 }
