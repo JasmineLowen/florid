@@ -208,10 +208,21 @@ class FDroidApiService {
     final repoDescription =
         await _databaseService.getMetadata('repo_description') ?? '';
 
-    // Also try to load the cached JSON for screenshot extraction
-    final cachedJson = await _tryLoadCache();
-    if (cachedJson != null) {
-      _cachedRawJson = cachedJson;
+    // Try to load the cached JSON for screenshot extraction (ignore age check)
+    if (_cachedRawJson == null) {
+      try {
+        final file = await _cacheFile();
+        if (await file.exists()) {
+          final contents = await file.readAsString();
+          final jsonData = json.decode(contents);
+          if (jsonData is Map<String, dynamic>) {
+            _cachedRawJson = jsonData;
+            debugPrint('Loaded cached JSON for screenshots (database mode)');
+          }
+        }
+      } catch (e) {
+        debugPrint('Could not load JSON cache for screenshots: $e');
+      }
     }
 
     // Create a map of apps keyed by package name
