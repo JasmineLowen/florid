@@ -13,6 +13,7 @@ import 'providers/repositories_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/database_service.dart';
 import 'services/fdroid_api_service.dart';
+import 'services/izzy_stats_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,7 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider<RepositoriesProvider>(
           create: (_) => RepositoriesProvider(DatabaseService()),
         ),
+        Provider<IzzyStatsService>(create: (_) => IzzyStatsService()),
         ProxyProvider<SettingsProvider, FDroidApiService>(
           update: (context, settings, previous) {
             if (previous != null) {

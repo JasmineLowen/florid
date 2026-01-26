@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/fdroid_app.dart';
 import '../providers/app_provider.dart';
 import '../providers/download_provider.dart';
+import '../services/izzy_stats_service.dart';
 
 class AppDetailsScreen extends StatefulWidget {
   final FDroidApp app;
@@ -25,6 +26,7 @@ class AppDetailsScreen extends StatefulWidget {
 
 class _AppDetailsScreenState extends State<AppDetailsScreen> {
   late Future<List<String>> _screenshotsFuture;
+  late Future<IzzyStats> _statsFuture;
 
   @override
   void initState() {
@@ -33,6 +35,9 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
     _screenshotsFuture = context.read<AppProvider>().getScreenshots(
       widget.app.packageName,
       repositoryUrl: widget.app.repositoryUrl,
+    );
+    _statsFuture = context.read<IzzyStatsService>().fetchStatsForPackage(
+      widget.app.packageName,
     );
   }
 
@@ -497,7 +502,16 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                               ),
                             ),
 
-                          _DownloadSection(app: widget.app),
+                          FutureBuilder<IzzyStats>(
+                            future: _statsFuture,
+                            builder: (context, snapshot) {
+                              final stats = snapshot.data;
+                              return _DownloadSection(
+                                app: widget.app,
+                                stats: stats!,
+                              );
+                            },
+                          ),
                         ],
                       );
                     },
@@ -543,6 +557,31 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                 // App details
                 _AppInfoSection(app: widget.app),
 
+                FutureBuilder<IzzyStats>(
+                  future: _statsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const _IzzyStatsLoadingCard();
+                    }
+                    if (snapshot.hasError) {
+                      return const _IzzyStatsInfoCard(
+                        message:
+                            'Unable to load IzzyOnDroid download stats right now.',
+                      );
+                    }
+
+                    final stats = snapshot.data;
+                    if (stats == null || !stats.hasAny) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return _IzzyStatsSection(
+                      packageName: widget.app.packageName,
+                      stats: stats,
+                    );
+                  },
+                ),
+
                 // Version info
                 if (widget.app.latestVersion != null)
                   _VersionInfoSection(version: widget.app.latestVersion!)
@@ -567,8 +606,9 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
 
 class _DownloadSection extends StatefulWidget {
   final FDroidApp app;
+  final IzzyStats stats;
 
-  const _DownloadSection({required this.app});
+  const _DownloadSection({required this.app, required this.stats});
 
   @override
   State<_DownloadSection> createState() => _DownloadSectionState();
@@ -714,7 +754,7 @@ class _DownloadSectionState extends State<_DownloadSection> {
                           SizedBox(
                             height: 32,
                             child: Icon(
-                              Symbols.apk_document_rounded,
+                              Symbols.download,
                               size: 32,
                               color: Theme.of(
                                 context,
@@ -768,46 +808,262 @@ class _DownloadSectionState extends State<_DownloadSection> {
                     ),
                   ),
                 ),
-                Expanded(
-                  child: Card.outlined(
-                    margin: EdgeInsets.zero,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        spacing: 8,
-                        children: [
-                          SizedBox(
-                            height: 32,
-                            child: Icon(
-                              Symbols.license_rounded,
-                              size: 32,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
+                if (!widget.stats.hasAny)
+                  Expanded(
+                    child: Card.outlined(
+                      margin: EdgeInsets.zero,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: 8,
+                          children: [
+                            SizedBox(
+                              height: 32,
+                              child: Icon(
+                                Symbols.license_rounded,
+                                size: 32,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                          Text(
-                            widget.app.license,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ],
+                            Text(
+                              widget.app.license,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
+                if (widget.stats.hasAny)
+                  Expanded(
+                    child: Card.outlined(
+                      margin: EdgeInsets.zero,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: 8,
+                          children: [
+                            SizedBox(
+                              height: 32,
+                              child: Icon(
+                                Symbols.chart_data,
+                                size: 32,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              widget.stats.last365Days != null
+                                  ? _formatCount(widget.stats.last365Days!)
+                                  : 'N/A',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _IzzyStatsSection extends StatelessWidget {
+  final String packageName;
+  final IzzyStats stats;
+
+  const _IzzyStatsSection({required this.packageName, required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final captionStyle = textTheme.bodySmall?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 16,
+            children: [
+              Row(
+                spacing: 8,
+                children: [
+                  Icon(
+                    Symbols.query_stats,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  Text(
+                    'Downloads stats',
+                    style: textTheme.labelMedium?.copyWith(
+                      // fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                spacing: 8,
+                children: [
+                  _IzzyStatTile(
+                    label: 'Last day',
+                    value: stats.lastDay,
+                    icon: Symbols.calendar_clock_rounded,
+                  ),
+                  _IzzyStatTile(
+                    label: 'Last 30 days',
+                    value: stats.last30Days,
+                    icon: Symbols.event_available,
+                  ),
+                  _IzzyStatTile(
+                    label: 'Last 365 days',
+                    value: stats.last365Days,
+                    icon: Symbols.timeline_rounded,
+                  ),
+                ],
+              ),
+              Text(
+                'Stats are pulled from IzzyOnDroid mirrors for $packageName when available.',
+                style: captionStyle,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _IzzyStatTile extends StatelessWidget {
+  final String label;
+  final int? value;
+  final IconData icon;
+
+  const _IzzyStatTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final subColor = Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      spacing: 6,
+      children: [
+        Row(
+          spacing: 6,
+          children: [
+            Icon(icon, size: 18, color: subColor),
+            Text(label, style: textTheme.bodySmall?.copyWith(color: subColor)),
+          ],
+        ),
+        Text(
+          value != null ? _formatCount(value!) : 'Not available',
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ],
+    );
+  }
+}
+
+String _formatCount(int value) {
+  if (value >= 1000000) {
+    return '${(value / 1000000).toStringAsFixed(1)}M';
+  }
+  if (value >= 1000) {
+    return '${(value / 1000).toStringAsFixed(1)}K';
+  }
+  return value.toString();
+}
+
+class _IzzyStatsLoadingCard extends StatelessWidget {
+  const _IzzyStatsLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Card.outlined(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Row(
+            spacing: 12,
+            children: [
+              CircularProgressIndicator(year2023: false),
+              Expanded(
+                child: Text(
+                  'Loading IzzyOnDroid download stats...',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _IzzyStatsInfoCard extends StatelessWidget {
+  final String message;
+
+  const _IzzyStatsInfoCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Card.outlined(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            spacing: 12,
+            children: [
+              Icon(Symbols.query_stats, color: color),
+              Expanded(
+                child: Text(
+                  message,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: color),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
