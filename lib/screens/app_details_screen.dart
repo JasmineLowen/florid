@@ -182,14 +182,33 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                               final installedApp = appProvider.getInstalledApp(
                                 widget.app.packageName,
                               );
-                              final downloadInfo = downloadProvider
-                                  .getDownloadInfo(
+
+                              // Check if ANY version of this app is downloading
+                              DownloadInfo? activeDownloadInfo;
+                              bool isDownloading = false;
+
+                              if (widget.app.packages != null) {
+                                for (var pkg in widget.app.packages!.values) {
+                                  final info = downloadProvider.getDownloadInfo(
+                                    widget.app.packageName,
+                                    pkg.versionName,
+                                  );
+                                  if (info?.status ==
+                                      DownloadStatus.downloading) {
+                                    activeDownloadInfo = info;
+                                    isDownloading = true;
+                                    break;
+                                  }
+                                }
+                              }
+
+                              // If no version is downloading, check the latest version for install/download buttons
+                              final downloadInfo =
+                                  activeDownloadInfo ??
+                                  downloadProvider.getDownloadInfo(
                                     widget.app.packageName,
                                     version.versionName,
                                   );
-                              final isDownloading =
-                                  downloadInfo?.status ==
-                                  DownloadStatus.downloading;
                               final isCancelled =
                                   downloadInfo?.status ==
                                   DownloadStatus.cancelled;
@@ -203,7 +222,25 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                                   !isCancelled &&
                                   fileExists;
 
-                              if (isDownloading) {
+                              if (isDownloading && activeDownloadInfo != null) {
+                                // Find the version name that's downloading
+                                String downloadingVersionName =
+                                    version.versionName;
+                                if (widget.app.packages != null) {
+                                  for (var pkg in widget.app.packages!.values) {
+                                    final info = downloadProvider
+                                        .getDownloadInfo(
+                                          widget.app.packageName,
+                                          pkg.versionName,
+                                        );
+                                    if (info?.status ==
+                                        DownloadStatus.downloading) {
+                                      downloadingVersionName = pkg.versionName;
+                                      break;
+                                    }
+                                  }
+                                }
+
                                 return SizedBox(
                                   width: double.infinity,
                                   height: 48,
@@ -211,7 +248,7 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                                     onPressed: () {
                                       downloadProvider.cancelDownload(
                                         widget.app.packageName,
-                                        version.versionName,
+                                        downloadingVersionName,
                                       );
                                     },
                                     child: const Text('Cancel Download'),
@@ -874,23 +911,39 @@ class _DownloadSectionState extends State<_DownloadSection> {
     return Consumer2<DownloadProvider, AppProvider>(
       builder: (context, downloadProvider, appProvider, child) {
         final version = widget.app.latestVersion!;
-        final downloadInfo = downloadProvider.getDownloadInfo(
-          widget.app.packageName,
-          version.versionName,
-        );
-        final isDownloading =
-            downloadInfo?.status == DownloadStatus.downloading;
 
-        final progress = downloadProvider.getProgress(
-          widget.app.packageName,
-          version.versionName,
-        );
+        // Check if ANY version of this app is downloading
+        DownloadInfo? activeDownloadInfo;
+        bool isDownloading = false;
+        String downloadingVersionName = version.versionName;
+
+        if (widget.app.packages != null) {
+          for (var pkg in widget.app.packages!.values) {
+            final info = downloadProvider.getDownloadInfo(
+              widget.app.packageName,
+              pkg.versionName,
+            );
+            if (info?.status == DownloadStatus.downloading) {
+              activeDownloadInfo = info;
+              isDownloading = true;
+              downloadingVersionName = pkg.versionName;
+              break;
+            }
+          }
+        }
+
+        final progress = isDownloading
+            ? downloadProvider.getProgress(
+                widget.app.packageName,
+                downloadingVersionName,
+              )
+            : 0.0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 16.0,
           children: [
-            if (isDownloading) ...[
+            if (isDownloading && activeDownloadInfo != null) ...[
               Column(
                 spacing: 4.0,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -904,9 +957,9 @@ class _DownloadSectionState extends State<_DownloadSection> {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ).animate().fadeIn(duration: Duration(milliseconds: 300)),
-                      if (downloadInfo != null && downloadInfo.totalBytes > 0)
+                      if (activeDownloadInfo.totalBytes > 0)
                         Text(
-                              '${downloadInfo.formattedBytesDownloaded} / ${downloadInfo.formattedTotalBytes}',
+                              '${activeDownloadInfo.formattedBytesDownloaded} / ${activeDownloadInfo.formattedTotalBytes}',
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: Theme.of(
@@ -924,22 +977,20 @@ class _DownloadSectionState extends State<_DownloadSection> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  if (downloadInfo != null)
-                    Text(
-                          downloadInfo.formattedSpeed,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        )
-                        .animate()
-                        .fadeIn(duration: Duration(milliseconds: 300))
-                        .slideY(
-                          begin: 0.5,
-                          end: 0,
-                          duration: Duration(milliseconds: 300),
+                  Text(
+                        activeDownloadInfo.formattedSpeed,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
                         ),
+                      )
+                      .animate()
+                      .fadeIn(duration: Duration(milliseconds: 300))
+                      .slideY(
+                        begin: 0.5,
+                        end: 0,
+                        duration: Duration(milliseconds: 300),
+                      ),
                   const SizedBox(height: 8),
                   LinearProgressIndicator(value: progress, year2023: false)
                       .animate()
