@@ -222,6 +222,13 @@ class AppThemes {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: ColorScheme.fromSeed(
+          seedColor: kAppColor,
+          brightness: Brightness.light,
+        ).surfaceContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
     );
   }
 
