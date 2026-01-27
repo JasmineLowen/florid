@@ -13,11 +13,11 @@ class AppThemes {
       useMaterial3: true,
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(99),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(99),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
             color: ColorScheme.fromSeed(
               seedColor: kAppColor,
@@ -25,6 +25,10 @@ class AppThemes {
             ).primary,
             width: 2,
           ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
         filled: true,
       ),
@@ -41,18 +45,22 @@ class AppThemes {
       useMaterial3: true,
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(99),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(99),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
             color: ColorScheme.fromSeed(
               seedColor: kAppColor,
-              brightness: Brightness.light,
+              brightness: Brightness.dark,
             ).primary,
             width: 2,
           ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
         filled: true,
       ),
