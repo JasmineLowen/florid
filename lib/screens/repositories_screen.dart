@@ -730,44 +730,54 @@ class _AddRepositoryDialogState extends State<_AddRepositoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return SimpleDialog(
       title: const Text('Add Repository'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      contentPadding: EdgeInsets.all(24),
+      children: [
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: 'Repository Name',
+            hintText: 'e.g., MyRepo',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _urlController,
+          decoration: const InputDecoration(
+            labelText: 'Repository URL',
+            hintText: 'https://example.com',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'URL format: https://repo.example.com (we\'ll add /repo/index-v2.json automatically)',
+          style: Theme.of(context).textTheme.bodySmall,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        Column(
+          spacing: 8.0,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Repository Name',
-                hintText: 'e.g., MyRepo',
-                border: OutlineInputBorder(),
+            SizedBox(
+              height: 48,
+              child: FilledButton(
+                onPressed: _addRepository,
+                child: const Text('Add'),
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _urlController,
-              decoration: const InputDecoration(
-                labelText: 'Repository URL',
-                hintText: 'https://example.com',
-                border: OutlineInputBorder(),
+            SizedBox(
+              height: 48,
+              child: FilledButton.tonal(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'URL format: https://repo.example.com (we\'ll add /repo/index-v2.json automatically)',
-              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(onPressed: _addRepository, child: const Text('Add')),
       ],
     );
   }
@@ -824,36 +834,46 @@ class _EditRepositoryDialogState extends State<_EditRepositoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return SimpleDialog(
       title: const Text('Edit Repository'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      contentPadding: EdgeInsets.all(24),
+      children: [
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: 'Repository Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _urlController,
+          decoration: const InputDecoration(
+            labelText: 'Repository URL',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Column(
+          spacing: 8.0,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Repository Name',
-                border: OutlineInputBorder(),
+            SizedBox(
+              height: 48,
+              child: FilledButton(
+                onPressed: _saveRepository,
+                child: const Text('Save'),
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _urlController,
-              decoration: const InputDecoration(
-                labelText: 'Repository URL',
-                border: OutlineInputBorder(),
+            SizedBox(
+              height: 48,
+              child: FilledButton.tonal(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
             ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(onPressed: _saveRepository, child: const Text('Save')),
       ],
     );
   }
