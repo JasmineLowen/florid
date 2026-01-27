@@ -96,29 +96,59 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                 ),
               // Presets section
               if (_presets.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      MListHeader(title: 'Preset'),
-                      MListViewBuilder(
-                        itemCount: _presets.length,
-                        itemBuilder: (index) {
-                          final preset = _presets[index];
-                          final isAdded = provider.repositories.any(
-                            (repo) => repo.url == preset['url'],
-                          );
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 4.0,
+                  children: [
+                    MListHeader(title: 'Preset'),
+                    MListViewBuilder(
+                      itemCount: _presets.length,
+                      itemBuilder: (index) {
+                        final preset = _presets[index];
+                        final isAdded = provider.repositories.any(
+                          (repo) => repo.url == preset['url'],
+                        );
 
-                          return MListItemData(
-                            title: preset['name']!,
-                            subtitle: preset['description']!,
-                            onTap: () {},
-                            suffix: Switch(
-                              value: isAdded,
-                              onChanged: (newValue) async {
-                                if (newValue) {
-                                  // Add the preset
+                        return MListItemData(
+                          title: preset['name']!,
+                          subtitle: preset['description']!,
+                          onTap: () {},
+                          suffix: Switch(
+                            value: isAdded,
+                            onChanged: (newValue) async {
+                              if (newValue) {
+                                // Add the preset
+                                await _runRepositoryActionWithDialog(
+                                  context,
+                                  () async {
+                                    final repoProvider = context
+                                        .read<RepositoriesProvider>();
+                                    final apiService = context
+                                        .read<FDroidApiService>();
+                                    final appProvider = context
+                                        .read<AppProvider>();
+
+                                    await repoProvider.addRepository(
+                                      preset['name']!,
+                                      preset['url']!,
+                                    );
+                                    await apiService.clearRepositoryCache();
+                                    await appProvider.refreshAll(
+                                      repositoriesProvider: repoProvider,
+                                    );
+                                  },
+                                );
+                              } else {
+                                // Remove the preset
+                                Repository? addedRepo;
+                                try {
+                                  addedRepo = provider.repositories.firstWhere(
+                                    (repo) => repo.url == preset['url'],
+                                  );
+                                } catch (e) {
+                                  addedRepo = null;
+                                }
+                                if (addedRepo != null) {
                                   await _runRepositoryActionWithDialog(
                                     context,
                                     () async {
@@ -129,9 +159,8 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                                       final appProvider = context
                                           .read<AppProvider>();
 
-                                      await repoProvider.addRepository(
-                                        preset['name']!,
-                                        preset['url']!,
+                                      repoProvider.deleteRepository(
+                                        addedRepo!.id,
                                       );
                                       await apiService.clearRepositoryCache();
                                       await appProvider.refreshAll(
@@ -139,46 +168,14 @@ class _RepositoriesScreenState extends State<RepositoriesScreen> {
                                       );
                                     },
                                   );
-                                } else {
-                                  // Remove the preset
-                                  Repository? addedRepo;
-                                  try {
-                                    addedRepo = provider.repositories
-                                        .firstWhere(
-                                          (repo) => repo.url == preset['url'],
-                                        );
-                                  } catch (e) {
-                                    addedRepo = null;
-                                  }
-                                  if (addedRepo != null) {
-                                    await _runRepositoryActionWithDialog(
-                                      context,
-                                      () async {
-                                        final repoProvider = context
-                                            .read<RepositoriesProvider>();
-                                        final apiService = context
-                                            .read<FDroidApiService>();
-                                        final appProvider = context
-                                            .read<AppProvider>();
-
-                                        repoProvider.deleteRepository(
-                                          addedRepo!.id,
-                                        );
-                                        await apiService.clearRepositoryCache();
-                                        await appProvider.refreshAll(
-                                          repositoriesProvider: repoProvider,
-                                        );
-                                      },
-                                    );
-                                  }
                                 }
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               // Your repositories section
               Padding(
@@ -454,10 +451,10 @@ Future<void> _toggleRepositoryWithDialog(
   final progress = ValueNotifier<double>(0.0);
 
   // Show a blocking dialog and execute the toggle inside it so the dialog stays up.
-  await showDialog(
+  await showModalBottomSheet(
     context: context,
-    barrierDismissible: false,
-    useRootNavigator: true,
+    useSafeArea: true,
+    isDismissible: false,
     builder: (dialogContext) {
       // // Kick off the async work after the dialog is built.
       Future.microtask(() async {
@@ -476,19 +473,40 @@ Future<void> _toggleRepositoryWithDialog(
         }
       });
 
-      return AlertDialog(
-        title: const Text('Updating Repository'),
-        icon: Icon(Symbols.sync, size: 32),
-        content: ValueListenableBuilder<double>(
-          valueListenable: progress,
-          builder: (_, value, __) {
-            final pct = (value * 100).clamp(0, 100).round();
-            return Column(
+      return ValueListenableBuilder<double>(
+        valueListenable: progress,
+        builder: (_, value, __) {
+          final pct = (value * 100).clamp(0, 100).round();
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 24.0,
+            ),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text('Now is a great time to touch grass!'),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: CircleAvatar(
+                    radius: 32,
+                    child: Icon(
+                      Symbols.sync,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Updating Repository',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  'Now is a great time to touch grass!',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 SizedBox(height: 16),
                 LinearProgressIndicator(
                   value: value == 0.0 ? null : value,
@@ -496,10 +514,11 @@ Future<void> _toggleRepositoryWithDialog(
                 ),
                 const SizedBox(height: 8),
                 Text('$pct%', textAlign: TextAlign.right),
+                const SizedBox(height: 32),
               ],
-            );
-          },
-        ),
+            ),
+          );
+        },
       );
     },
   );
@@ -511,10 +530,10 @@ Future<void> _runRepositoryActionWithDialog(
 ) async {
   final progress = ValueNotifier<double>(0.0);
 
-  await showDialog(
+  await showModalBottomSheet(
     context: context,
-    barrierDismissible: false,
-    useRootNavigator: true,
+    useSafeArea: true,
+    isDismissible: false,
     builder: (dialogContext) {
       Future.microtask(() async {
         try {
@@ -528,19 +547,40 @@ Future<void> _runRepositoryActionWithDialog(
         }
       });
 
-      return AlertDialog(
-        title: const Text('Updating Repository'),
-        icon: Icon(Symbols.sync, size: 32),
-        content: ValueListenableBuilder<double>(
-          valueListenable: progress,
-          builder: (_, value, __) {
-            final pct = (value * 100).clamp(0, 100).round();
-            return Column(
+      return ValueListenableBuilder<double>(
+        valueListenable: progress,
+        builder: (_, value, __) {
+          final pct = (value * 100).clamp(0, 100).round();
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 24.0,
+            ),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text('Now is a great time to touch grass!'),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: CircleAvatar(
+                    radius: 32,
+                    child: Icon(
+                      Symbols.sync,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Updating Repository',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  'Now is a great time to touch grass!',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 SizedBox(height: 16),
                 LinearProgressIndicator(
                   value: value == 0.0 ? null : value,
@@ -548,10 +588,11 @@ Future<void> _runRepositoryActionWithDialog(
                 ),
                 const SizedBox(height: 8),
                 Text('$pct%', textAlign: TextAlign.right),
+                const SizedBox(height: 32),
               ],
-            );
-          },
-        ),
+            ),
+          );
+        },
       );
     },
   );
@@ -642,32 +683,22 @@ class _AddRepositoryDialogState extends State<_AddRepositoryDialog> {
                   if (_showPresets)
                     ...List.generate(_presets.length, (index) {
                       final preset = _presets[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Material(
-                          color: Theme.of(context).colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(8),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            title: Text(preset['name']!),
-                            subtitle: Text(
-                              preset['description']!,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Symbols.add),
-                              onPressed: () {
-                                widget.onAddPreset(
-                                  preset['name']!,
-                                  preset['url']!,
-                                );
-                                Navigator.pop(context);
-                              },
-                            ),
-                            onTap: () {
+                      return Material(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(8),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          title: Text(preset['name']!),
+                          subtitle: Text(
+                            preset['description']!,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Symbols.add),
+                            onPressed: () {
                               widget.onAddPreset(
                                 preset['name']!,
                                 preset['url']!,
@@ -675,6 +706,10 @@ class _AddRepositoryDialogState extends State<_AddRepositoryDialog> {
                               Navigator.pop(context);
                             },
                           ),
+                          onTap: () {
+                            widget.onAddPreset(preset['name']!, preset['url']!);
+                            Navigator.pop(context);
+                          },
                         ),
                       );
                     }),
