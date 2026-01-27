@@ -5,6 +5,7 @@ import 'package:florid/widgets/changelog_preview.dart';
 import 'package:florid/widgets/m_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -1447,20 +1448,7 @@ class _DescriptionSectionState extends State<_DescriptionSection>
 
   @override
   Widget build(BuildContext context) {
-    final maxLines = _isExpanded ? null : 3;
     final description = widget.app.description;
-
-    // Check if text would overflow with 3 lines
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: description,
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
-      maxLines: 3,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout(maxWidth: MediaQuery.of(context).size.width - 32);
-    final isOverflowing = textPainter.didExceedMaxLines;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1474,46 +1462,49 @@ class _DescriptionSectionState extends State<_DescriptionSection>
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
-          Stack(
-            children: [
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: Text(
-                  description,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  maxLines: maxLines,
-                  overflow: _isExpanded
-                      ? TextOverflow.visible
-                      : TextOverflow.ellipsis,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: Html(
+              data: description,
+              shrinkWrap: true,
+              style: {
+                "body": Style(
+                  margin: Margins.zero,
+                  padding: HtmlPaddings.zero,
+                  fontSize: FontSize(
+                    Theme.of(context).textTheme.bodyMedium?.fontSize ?? 14,
+                  ),
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  maxLines: _isExpanded ? null : 3,
+                  textOverflow: _isExpanded ? null : TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          if (isOverflowing)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 300),
-                style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                "p": Style(margin: Margins.only(bottom: 8)),
+                "a": Style(
                   color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
+                  textDecoration: TextDecoration.underline,
                 ),
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _isExpanded = !_isExpanded;
-                      if (_isExpanded) {
-                        _animationController.forward();
-                      } else {
-                        _animationController.reverse();
-                      }
-                    });
-                  },
-                  child: Text(_isExpanded ? 'Show less' : 'Show more'),
-                ),
-              ),
+              },
+              onLinkTap: (url, attributes, element) {
+                if (url != null) {
+                  launchUrl(Uri.parse(url));
+                }
+              },
             ),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+                if (_isExpanded) {
+                  _animationController.forward();
+                } else {
+                  _animationController.reverse();
+                }
+              });
+            },
+            child: Text(_isExpanded ? 'Show less' : 'Show more'),
+          ),
         ],
       ),
     );
