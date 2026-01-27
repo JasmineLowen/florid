@@ -75,7 +75,23 @@ class AppThemes {
         seedColor: kAppColor,
         brightness: Brightness.light,
       ),
-      appBarTheme: AppBarTheme(centerTitle: true),
+      fontFamily: 'Google Sans Flex',
+      appBarTheme: AppBarTheme(
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontFamily: 'Google Sans Flex',
+          fontSize: 24,
+          fontVariations: [
+            FontVariation('wght', 900),
+            FontVariation('ROND', 100),
+            FontVariation('wdth', 125),
+          ],
+          color: ColorScheme.fromSeed(
+            seedColor: kAppColor,
+            brightness: Brightness.light,
+          ).onSurface,
+        ),
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 0,
         backgroundColor: ColorScheme.fromSeed(
@@ -86,6 +102,18 @@ class AppThemes {
           seedColor: kAppColor,
           brightness: Brightness.light,
         ).onPrimary,
+        extendedTextStyle: TextStyle(
+          fontFamily: 'Google Sans Flex',
+          fontVariations: [
+            FontVariation('wght', 700),
+            FontVariation('ROND', 100),
+            FontVariation('wdth', 125),
+          ],
+          color: ColorScheme.fromSeed(
+            seedColor: kAppColor,
+            brightness: Brightness.dark,
+          ).onSurface,
+        ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
@@ -239,7 +267,23 @@ class AppThemes {
         seedColor: kAppColor,
         brightness: Brightness.dark,
       ),
-      appBarTheme: AppBarThemeData(centerTitle: true),
+      fontFamily: 'Google Sans Flex',
+      appBarTheme: AppBarThemeData(
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontFamily: 'Google Sans Flex',
+          fontSize: 24,
+          fontVariations: [
+            FontVariation('wght', 900),
+            FontVariation('ROND', 100),
+            FontVariation('wdth', 125),
+          ],
+          color: ColorScheme.fromSeed(
+            seedColor: kAppColor,
+            brightness: Brightness.dark,
+          ).onSurface,
+        ),
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 0,
         backgroundColor: ColorScheme.fromSeed(
@@ -250,6 +294,18 @@ class AppThemes {
           seedColor: kAppColor,
           brightness: Brightness.dark,
         ).onPrimary,
+        extendedTextStyle: TextStyle(
+          fontFamily: 'Google Sans Flex',
+          fontVariations: [
+            FontVariation('wght', 700),
+            FontVariation('ROND', 100),
+            FontVariation('wdth', 125),
+          ],
+          color: ColorScheme.fromSeed(
+            seedColor: kAppColor,
+            brightness: Brightness.dark,
+          ).onSurface,
+        ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,

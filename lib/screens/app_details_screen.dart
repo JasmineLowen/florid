@@ -73,11 +73,19 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                         widget.app.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontVariations: [
+                            FontVariation('wght', 700),
+                            FontVariation('ROND', 100),
+                          ],
+                        ),
                       ),
                       Text(
                         'by ${widget.app.authorName ?? 'Unknown'}',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontVariations: [FontVariation('ROND', 100)],
                         ),
                       ),
                     ],
