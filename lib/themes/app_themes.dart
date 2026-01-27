@@ -195,7 +195,22 @@ class AppThemes {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderSide: BorderSide.none),
+        filled: true,
+        border: OutlineInputBorder(borderSide: BorderSide(width: 0)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide(
+            color: ColorScheme.fromSeed(
+              seedColor: kAppColor,
+              brightness: Brightness.light,
+            ).primary,
+            width: 1,
+          ),
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: ColorScheme.fromSeed(
@@ -209,15 +224,6 @@ class AppThemes {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: ColorScheme.fromSeed(
-          seedColor: kAppColor,
-          brightness: Brightness.dark,
-        ).surfaceContainer,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        alignment: Alignment.bottomCenter,
-        insetPadding: EdgeInsets.all(16),
       ),
     );
   }
@@ -364,7 +370,22 @@ class AppThemes {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderSide: BorderSide.none),
+        filled: true,
+        border: OutlineInputBorder(borderSide: BorderSide(width: 0)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(99),
+          borderSide: BorderSide(
+            color: ColorScheme.fromSeed(
+              seedColor: kAppColor,
+              brightness: Brightness.dark,
+            ).primary,
+            width: 1,
+          ),
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: ColorScheme.fromSeed(
@@ -385,8 +406,6 @@ class AppThemes {
           brightness: Brightness.dark,
         ).surfaceContainer,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        alignment: Alignment.bottomCenter,
-        insetPadding: EdgeInsets.all(16),
       ),
     );
   }
