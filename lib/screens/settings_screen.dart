@@ -149,6 +149,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           settings.setThemeStyle(style);
                         },
                       ),
+                      MListView(
+                        items: [
+                          MListItemData(
+                            leading: Icon(Symbols.feedback),
+                            title: 'Fedback on Florid theme',
+                            subtitle:
+                                'Help improve the Florid theme by providing feedback',
+                            onTap: () {
+                              launchUrl(
+                                Uri.parse(
+                                  'https://github.com/Nandanrmenon/florid/discussions/5',
+                                ),
+                              );
+                            },
+                            suffix: Icon(Symbols.open_in_new),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                   Column(
