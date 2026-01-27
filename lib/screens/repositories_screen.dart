@@ -688,7 +688,7 @@ class _AddRepositoryDialogState extends State<_AddRepositoryDialog> {
   late TextEditingController _nameController;
   late TextEditingController _urlController;
   List<Map<String, String>> _presets = [];
-  bool _showPresets = true;
+  final bool _showPresets = true;
 
   @override
   void initState() {
@@ -737,68 +737,6 @@ class _AddRepositoryDialogState extends State<_AddRepositoryDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_presets.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Preset Repositories',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() => _showPresets = !_showPresets);
-                        },
-                        child: Text(_showPresets ? 'Hide' : 'Show'),
-                      ),
-                    ],
-                  ),
-                  if (_showPresets)
-                    ...List.generate(_presets.length, (index) {
-                      final preset = _presets[index];
-                      return Material(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(8),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          title: Text(preset['name']!),
-                          subtitle: Text(
-                            preset['description']!,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Symbols.add),
-                            onPressed: () {
-                              widget.onAddPreset(
-                                preset['name']!,
-                                preset['url']!,
-                              );
-                              Navigator.pop(context);
-                            },
-                          ),
-                          onTap: () {
-                            widget.onAddPreset(preset['name']!, preset['url']!);
-                            Navigator.pop(context);
-                          },
-                        ),
-                      );
-                    }),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            Text(
-              'Custom Repository',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 12),
             TextField(
               controller: _nameController,
               decoration: const InputDecoration(
