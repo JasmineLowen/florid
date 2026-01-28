@@ -892,15 +892,6 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
 
                               // return SizedBox(
                               //   width: double.infinity,
-                              //   height: 48,
-                              //   child: _buildInstallButton(
-                              //     context,
-                              //     downloadProvider,
-                              //     appProvider,
-                              //     isDownloaded,
-                              //     version,
-                              //   ),
-                              // );
                               return FutureBuilder<FDroidApp>(
                                 future: _enrichedAppFuture,
                                 builder: (context, snapshot) {
@@ -908,6 +899,11 @@ class _AppDetailsScreenState extends State<AppDetailsScreen> {
                                   final enrichedApp = snapshot.connectionState == ConnectionState.done && snapshot.hasData
                                       ? snapshot.data!
                                       : widget.app;
+                                  
+                                  // Log error if enrichment failed
+                                  if (snapshot.hasError) {
+                                    debugPrint('Error enriching app: ${snapshot.error}');
+                                  }
                                   
                                   return _buildInstallButton(
                                     context,

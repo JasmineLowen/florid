@@ -218,52 +218,6 @@ class AppProvider extends ChangeNotifier {
     );
   }
 
-  /// Helper method to merge apps by package name while tracking all repository sources
-  Map<String, FDroidApp> _mergeAppsByPackageName(
-    List<({FDroidApp app, String repoName})> appsWithRepo,
-  ) {
-    final mergedApps = <String, FDroidApp>{};
-
-    for (final item in appsWithRepo) {
-      final packageName = item.app.packageName;
-      final app = item.app;
-      final repoName = item.repoName;
-
-      if (mergedApps.containsKey(packageName)) {
-        // App already exists, add this repository to the available sources
-        final existing = mergedApps[packageName]!;
-        final repoSource = RepositorySource(
-          name: repoName,
-          url: app.repositoryUrl,
-        );
-
-        // Add the new repository if it's not already in the list
-        final availableRepos = existing.availableRepositories ?? [];
-        if (!availableRepos.contains(repoSource)) {
-          // Create new list with the additional repository
-          final updatedRepos = [...availableRepos, repoSource];
-
-          // Keep the existing app but update available repositories
-          mergedApps[packageName] = existing.copyWith(
-            availableRepositories: updatedRepos,
-          );
-        }
-      } else {
-        // First time seeing this app, add it with its repository as a source
-        mergedApps[packageName] = app.copyWith(
-          availableRepositories: [
-            RepositorySource(
-              name: repoName,
-              url: app.repositoryUrl,
-            ),
-          ],
-        );
-      }
-    }
-
-    return mergedApps;
-  }
-
   /// Enriches a single app with repository information from all enabled repositories
   /// This is useful when displaying app details to show which repositories host the app
   Future<FDroidApp> enrichAppWithRepositories(
@@ -276,9 +230,13 @@ class AppProvider extends ChangeNotifier {
 
     try {
       // Ensure repositories are loaded
-      if (repositoriesProvider.repositories.isEmpty &&
-          !repositoriesProvider.isLoading) {
-        await repositoriesProvider.loadRepositories();
+      if (repositoriesProvider.repositories.isEmpty) {
+        if (!repositoriesProvider.isLoading) {
+          await repositoriesProvider.loadRepositories();
+        } else {
+          // Wait a bit for loading to complete
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
       }
 
       final enabledRepos = repositoriesProvider.enabledRepositories;
@@ -286,10 +244,28 @@ class AppProvider extends ChangeNotifier {
         return app;
       }
 
+      // Start with original repository source if not null
+      final availableReposList = <RepositorySource>[];
+      if (app.repositoryUrl.isNotEmpty) {
+        // Find the repo name for the original URL
+        final originalRepo = enabledRepos.where((r) => r.url == app.repositoryUrl).firstOrNull;
+        if (originalRepo != null) {
+          availableReposList.add(RepositorySource(
+            name: originalRepo.name,
+            url: app.repositoryUrl,
+          ));
+        }
+      }
+
       // Query all repositories in parallel for better performance
       final repoChecks = await Future.wait(
         enabledRepos.map((repo) async {
           try {
+            // Skip if already added as original
+            if (repo.url == app.repositoryUrl) {
+              return null;
+            }
+            
             // Try to find the app in this repository via database
             final results = await _apiService.searchAppsFromRepositoryUrl(
               app.packageName, // Use exact package name for lookup
@@ -307,12 +283,12 @@ class AppProvider extends ChangeNotifier {
         }),
       );
 
-      // Filter out nulls and collect available repositories
-      final availableRepos = repoChecks.whereType<RepositorySource>().toList();
+      // Filter out nulls and add to available repos
+      availableReposList.addAll(repoChecks.whereType<RepositorySource>());
 
-      // If we found the app in multiple repositories, update it
-      if (availableRepos.isNotEmpty) {
-        return app.copyWith(availableRepositories: availableRepos);
+      // If we found the app in repositories, update it
+      if (availableReposList.isNotEmpty) {
+        return app.copyWith(availableRepositories: availableReposList);
       }
 
       return app;
