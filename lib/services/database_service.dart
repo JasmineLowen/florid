@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -603,7 +602,6 @@ class DatabaseService {
 
       return appResults.isNotEmpty;
     } catch (e) {
-      debugPrint('Error checking if app $packageName exists in repository $repositoryUrl: $e');
       return false;
     }
   }
