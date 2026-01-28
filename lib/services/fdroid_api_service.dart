@@ -517,6 +517,17 @@ class FDroidApiService {
     }
   }
 
+  /// Checks if an app exists in a specific repository (database only, no network fetch)
+  Future<bool> hasAppInRepository(
+    String packageName,
+    String repositoryUrl,
+  ) async {
+    return await _databaseService.hasAppInRepository(
+      packageName,
+      repositoryUrl,
+    );
+  }
+
   /// Fetches all available categories
   Future<List<String>> fetchCategories() async {
     try {
