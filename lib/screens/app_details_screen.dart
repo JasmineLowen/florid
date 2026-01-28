@@ -1911,7 +1911,7 @@ class _VersionDownloadButton extends StatelessWidget {
     if (hasMultipleRepos) {
       // Show split button with dropdown for multiple repositories
       return Row(
-        spacing: 0,
+        spacing: 1,
         children: [
           Expanded(
             child: FilledButton.icon(
@@ -1937,7 +1937,6 @@ class _VersionDownloadButton extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 1),
           FilledButton(
             onPressed: () => _showRepositorySelection(
               context,
@@ -2110,19 +2109,23 @@ class _VersionDownloadButton extends StatelessWidget {
     final availableRepos = widget.app.availableRepositories;
     if (availableRepos == null || availableRepos.isEmpty) return;
 
+    // Capture the mounted context before showing dialog
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Install from Repository'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isDownloaded ? 'Install from Repository' : 'Download from Repository'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: availableRepos.map((repo) {
+            final isPrimary = repo.url == widget.app.repositoryUrl;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
               child: OutlinedButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                   _handleInstall(
                     context,
                     downloadProvider,
@@ -2132,21 +2135,53 @@ class _VersionDownloadButton extends StatelessWidget {
                     repo.url,
                   );
                 },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 4,
+                style: isPrimary ? OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: Theme.of(dialogContext).colorScheme.primary,
+                    width: 2,
+                  ),
+                ) : null,
+                child: Row(
                   children: [
-                    Text(
-                      repo.name,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      repo.url,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  repo.name,
+                                  style: Theme.of(dialogContext).textTheme.titleMedium,
+                                ),
+                              ),
+                              if (isPrimary)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(dialogContext).colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'Default',
+                                    style: Theme.of(dialogContext).textTheme.labelSmall?.copyWith(
+                                      color: Theme.of(dialogContext).colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          Text(
+                            repo.url,
+                            style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(dialogContext).textTheme.bodySmall?.color?.withOpacity(0.7),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -2156,7 +2191,7 @@ class _VersionDownloadButton extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
         ],

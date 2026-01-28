@@ -181,20 +181,17 @@ class AppProvider extends ChangeNotifier {
             url: app.repositoryUrl,
           );
           
-          // Create a list of available repositories if it doesn't exist
-          final availableRepos = existing.availableRepositories != null
-              ? List<RepositorySource>.from(existing.availableRepositories!)
-              : [RepositorySource(name: 'Unknown', url: existing.repositoryUrl)];
-          
           // Add the new repository if it's not already in the list
+          final availableRepos = existing.availableRepositories ?? [];
           if (!availableRepos.contains(repoSource)) {
-            availableRepos.add(repoSource);
+            // Create new list with the additional repository
+            final updatedRepos = [...availableRepos, repoSource];
+            
+            // Keep the existing app but update available repositories
+            mergedApps[packageName] = existing.copyWith(
+              availableRepositories: updatedRepos,
+            );
           }
-          
-          // Keep the existing app but update available repositories
-          mergedApps[packageName] = existing.copyWith(
-            availableRepositories: availableRepos,
-          );
         } else {
           // First time seeing this app, add it with its repository as a source
           mergedApps[packageName] = app.copyWith(

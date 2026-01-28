@@ -17,10 +17,11 @@ class RepositorySource {
       identical(this, other) ||
       other is RepositorySource &&
           runtimeType == other.runtimeType &&
-          url == other.url;
+          url == other.url &&
+          name == other.name;
 
   @override
-  int get hashCode => url.hashCode;
+  int get hashCode => Object.hash(url, name);
 }
 
 @JsonSerializable()
