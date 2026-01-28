@@ -568,44 +568,6 @@ class DatabaseService {
     return apps;
   }
 
-  /// Checks if an app exists in a specific repository (database only, no network fetch)
-  /// Returns true if the app is found in the repository's database
-  Future<bool> hasAppInRepository(
-    String packageName,
-    String repositoryUrl,
-  ) async {
-    try {
-      final db = await database;
-
-      // Get repository ID by URL
-      final repoResults = await db.query(
-        _repositoriesTable,
-        columns: ['id'],
-        where: 'url = ?',
-        whereArgs: [repositoryUrl],
-      );
-
-      if (repoResults.isEmpty) {
-        return false; // Repository not found in database
-      }
-
-      final repositoryId = repoResults.first['id'] as int;
-
-      // Check if app exists in this repository
-      final appResults = await db.query(
-        _appsTable,
-        columns: ['package_name'],
-        where: 'package_name = ? AND repository_id = ?',
-        whereArgs: [packageName, repositoryId],
-        limit: 1,
-      );
-
-      return appResults.isNotEmpty;
-    } catch (e) {
-      return false;
-    }
-  }
-
   /// Searches apps by repository URL
   Future<List<FDroidApp>> searchAppsByRepository(
     String query,

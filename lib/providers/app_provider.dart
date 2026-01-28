@@ -220,7 +220,6 @@ class AppProvider extends ChangeNotifier {
 
   /// Enriches a single app with repository information from all enabled repositories
   /// This is useful when displaying app details to show which repositories host the app
-  /// Only checks database - does not trigger network fetches for performance
   Future<FDroidApp> enrichAppWithRepositories(
     FDroidApp app,
     RepositoriesProvider? repositoriesProvider,
@@ -259,7 +258,6 @@ class AppProvider extends ChangeNotifier {
       }
 
       // Query all repositories in parallel for better performance
-      // Use lightweight database-only check - no network fetches
       final repoChecks = await Future.wait(
         enabledRepos.map((repo) async {
           try {
@@ -268,14 +266,14 @@ class AppProvider extends ChangeNotifier {
               return null;
             }
             
-            // Check if app exists in this repository's database (lightweight, no network)
-            final exists = await _apiService.hasAppInRepository(
-              app.packageName,
+            // Try to find the app in this repository via database
+            final results = await _apiService.searchAppsFromRepositoryUrl(
+              app.packageName, // Use exact package name for lookup
               repo.url,
             );
             
             // If found in this repository, return the source
-            if (exists) {
+            if (results.any((a) => a.packageName == app.packageName)) {
               return RepositorySource(name: repo.name, url: repo.url);
             }
           } catch (e) {
