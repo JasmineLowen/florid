@@ -2,7 +2,7 @@ name: florid
 description: "A modern F-Droid client for Android built with Flutter."
 publish_to: "none"
 
-version: 1.0.4+5
+version: 1.0.5+6
 
 environment:
   sdk: ^3.9.2
@@ -123,10 +123,10 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
+  fonts:
+    - family: Google Sans Flex
+      fonts:
+        - asset: assets/fonts/GoogleSansFlex-VariableFont.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro
